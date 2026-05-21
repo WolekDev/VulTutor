@@ -1,0 +1,645 @@
+openapi: "3.0.3"
+
+info:
+  title: VulTutor
+  version: "1.0.0"
+  description: >
+    A cybersecurity learning platform inspired by WebGoat.
+    Users can explore intentionally vulnerable exercises, 
+    CTF challenges, and real-world CVE references.
+  contact:
+    name: Arin and Bartosz
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+  - url: https://vultutor.com/api
+    description: Production server
+
+tags:
+  - name: Sessions
+    description: User authentication (create/destroy sessions)
+  - name: Home
+    description: Dashboard and vulnerability/CVE overview
+  - name: Vulnerabilities
+    description: Vulnerability lessons, questions, and CTF challenges
+  - name: CVE
+    description: CVE reference lookups
+  - name: Register
+    description: User registration
+  - name: Account
+    description: User account management
+
+# --------------------------------------------
+# PATHS
+# --------------------------------------------
+paths:
+  # -- SESSIONS (AUTH) -----------------------
+  /sessions:
+    post:
+      tags: [Sessions]
+      summary: Authenticate a user (login)
+      description: Accepts credentials and returns a JWT access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "201":
+          description: Session created - login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+    delete:
+      tags: [Sessions]
+      summary: Log out (invalidate session)
+      description: Invalidates the current JWT token.
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Session destroyed - logged out successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # -- HOME ---------------------------------
+  /home:
+    get:
+      tags: [Home]
+      summary: Get the dashboard
+      description: Returns username, vulnerabilities list with progress, and CVEs list.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # -- VULNERABILITIES ------------------------
+  /vulnerabilities/{vulnId}/description:
+    get:
+      tags: [Vulnerabilities]
+      summary: Get vulnerability description
+      description: Returns the name, description, and related CVEs for a given vulnerability.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VulnId"
+      responses:
+        "200":
+          description: Vulnerability description details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VulnerabilityDescription"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /vulnerabilities/{vulnId}/questions:
+    get:
+      tags: [Vulnerabilities]
+      summary: Get quiz questions and hints for a vulnerability
+      description: Returns sequential questions, their corresponding hints, and completion status.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VulnId"
+      responses:
+        "200":
+          description: List of questions with embedded hints
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionsResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /vulnerabilities/{vulnId}/questions/{questionId}:
+    post:
+      tags: [Vulnerabilities]
+      summary: Submit an answer to a specific question
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VulnId"
+        - $ref: "#/components/parameters/QuestionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnswerSubmission"
+      responses:
+        "200":
+          description: Answer validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnswerResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /vulnerabilities/{vulnId}/ctf:
+    get:
+      tags: [Vulnerabilities]
+      summary: Get CTF challenge for a vulnerability
+      description: Returns the Capture The Flag challenge details (description, download resource path, completion status).
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VulnId"
+      responses:
+        "200":
+          description: CTF challenge details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CTFChallenge"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    post:
+      tags: [Vulnerabilities]
+      summary: Submit a CTF flag
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/VulnId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FlagSubmission"
+      responses:
+        "200":
+          description: Flag validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlagResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # -- CVE -------------------------------------
+  /cve/{cveId}:
+    get:
+      tags: [CVE]
+      summary: Look up a CVE entry
+      description: Returns details about a specific CVE including its description and links to related vulnerabilities.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CveId"
+      responses:
+        "200":
+          description: CVE details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CVEEntry"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # -- USERS (REGISTRATION) -----------------
+  /register:
+    post:
+      tags: [Register]
+      summary: Register a new user account
+      description: Creates a new user and returns a JWT access token (auto-login on success).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created - registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  # -- ACCOUNT ------------------------------
+  /account:
+    get:
+      tags: [Account]
+      summary: Get current user account profile
+      description: Returns profile metadata for the authenticated user.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    put:
+      tags: [Account]
+      summary: Update account details
+      description: Updates username, email, or password for the authenticated account.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccountUpdate"
+      responses:
+        "200":
+          description: Successfully updated account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    delete:
+      tags: [Account]
+      summary: Delete the current user account
+      security:
+        - BearerAuth: []
+      responses:
+        "204":
+          description: Account deleted successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+# --------------------------------------------
+# COMPONENTS
+# --------------------------------------------
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    VulnId:
+      name: vulnId
+      in: path
+      required: true
+      description: Numeric integer ID of the vulnerability
+      schema:
+        type: integer
+        example: 3
+    QuestionId:
+      name: questionId
+      in: path
+      required: true
+      description: Numeric integer ID of the specific question
+      schema:
+        type: integer
+        example: 1
+    CveId:
+      name: cveId
+      in: path
+      required: true
+      description: CVE identifier text string (e.g. CVE-2021-44228)
+      schema:
+        type: string
+        pattern: '^CVE-\d{4}-\d{4,}$'
+        example: "CVE-2021-44228"
+
+  responses:
+    Conflict:
+      description: Username or email already in use
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 409
+            message: "Username or email already exists"
+    Unauthorized:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 401
+            message: "Unauthorized"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 404
+            message: "Not found"
+    BadRequest:
+      description: Invalid request body or parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: 400
+            message: "Bad request"
+
+  schemas:
+    # Auth
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: "student"
+        password:
+          type: string
+          format: password
+          description: Plaintext password from client that gets hashed before/during submission
+          example: "password123"
+
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          example: "student"
+        email:
+          type: string
+          format: email
+          example: "student@example.com"
+        password:
+          type: string
+          format: password
+          description: Plaintext password from client that gets hashed before/during submission
+          example: "password123"
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        expiresIn:
+          type: integer
+          description: Token lifetime in seconds
+          example: 3600
+
+    # Home Dashboard Response
+    HomeResponse:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "student"
+        vulnerabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/VulnerabilitySummary"
+        cves:
+          type: array
+          items:
+            $ref: "#/components/schemas/CVESummary"
+
+    VulnerabilitySummary:
+      type: object
+      properties:
+        vulnId:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: "SQL Injection"
+        progress:
+          type: number
+          format: float
+          description: "Progress fraction (0.0 = not completed, 1.0 = fully completed, in between = partially completed)"
+          example: 0.5
+
+    CVESummary:
+      type: object
+      properties:
+        cveId:
+          type: string
+          example: "CVE-2021-44228"
+
+    # Vulnerability Page Details
+    VulnerabilityDescription:
+      type: object
+      properties:
+        vulnId:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: "SQL Injection"
+        description:
+          type: string
+          example: "SQL injection allows attackers to interfere with database queries."
+
+    QuestionsResponse:
+      type: object
+      properties:
+        vulnId:
+          type: integer
+          example: 3
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+
+    Question:
+      type: object
+      properties:
+        questionId:
+          type: integer
+          example: 1
+        questionNumber:
+          type: integer
+          example: 1
+        question:
+          type: string
+          example: "What clause is commonly abused in a SQL injection attack?"
+        completed:
+          type: boolean
+          description: Indicates if the user has completed this individual question
+          example: false
+        hints:
+          type: array
+          items:
+            $ref: "#/components/schemas/Hint"
+
+    Hint:
+      type: object
+      properties:
+        hintId:
+          type: integer
+          example: 10
+        hintNumber:
+          type: integer
+          description: Order sequence for navigation
+          example: 1
+        hint:
+          type: string
+          example: "Think about the WHERE clause."
+
+    AnswerSubmission:
+      type: object
+      required: [answer]
+      properties:
+        answer:
+          type: string
+          example: "WHERE"
+
+    AnswerResult:
+      type: object
+      properties:
+        correct:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Correct answer!"
+
+    CTFChallenge:
+      type: object
+      properties:
+        ctfId:
+          type: integer
+          example: 5
+        description:
+          type: string
+          example: "Use SQL injection to log in without a valid password."
+        path:
+          type: string
+          description: "File system path or link to download the challenge resources"
+          example: "/api/challenges/sqli_login.zip"
+        completed:
+          type: boolean
+          description: Indicates if the user has solved this CTF challenge
+          example: false
+
+    FlagSubmission:
+      type: object
+      required: [flag]
+      properties:
+        flag:
+          type: string
+          example: "FLAG{sqli_bypass_success}"
+
+    FlagResult:
+      type: object
+      properties:
+        correct:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Correct! You successfully exploited the CTF challenge."
+
+    # CVE Details Page Response
+    CVEEntry:
+      type: object
+      properties:
+        cveId:
+          type: string
+          example: "CVE-2021-44228"
+        description:
+          type: string
+          example: "Apache Log4j2 remote code execution vulnerability (Log4Shell)."
+        relatedVulnerabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelatedVulnerability"
+
+    RelatedVulnerability:
+      type: object
+      properties:
+        vulnId:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: "SQL Injection"
+
+    # Account Management
+    Account:
+      type: object
+      properties:
+        userId:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: "student"
+        email:
+          type: string
+          format: email
+          example: "student@example.com"
+
+    AccountUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "student_updated"
+        email:
+          type: string
+          format: email
+          example: "newemail@example.com"
+        password:
+          type: string
+          format: password
+          example: "newSecurePassword!"
+
+    # Shared Error Model
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: "Resource not found"
