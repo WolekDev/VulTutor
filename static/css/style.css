@@ -1,0 +1,167 @@
+/* ============================================================
+   VulTutor – Custom styles (dark cybersecurity theme)
+   ============================================================ */
+
+:root {
+  --vt-green: #39d353;
+  --vt-green-dim: #238636;
+  --vt-bg: #0d1117;
+  --vt-surface: #161b22;
+  --vt-border: #30363d;
+  --vt-text: #e6edf3;
+  --vt-muted: #8b949e;
+}
+
+/* Base */
+body {
+  background-color: var(--vt-bg);
+  color: var(--vt-text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* Navbar */
+.vt-navbar {
+  background-color: var(--vt-surface);
+  border-bottom: 1px solid var(--vt-border);
+}
+
+.vt-brand {
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--vt-green) !important;
+  letter-spacing: -0.3px;
+}
+
+/* Cards */
+.vt-card {
+  background-color: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  border-radius: 8px;
+}
+
+.vt-card-done {
+  border-left: 3px solid var(--vt-green) !important;
+  opacity: 0.85;
+}
+
+/* Progress bar */
+.vt-progress {
+  height: 6px;
+  background-color: var(--vt-border);
+  border-radius: 4px;
+}
+
+/* Hero icon */
+.vt-hero-icon {
+  font-size: 3rem;
+  color: var(--vt-green);
+}
+
+/* Section titles */
+.vt-heading {
+  font-weight: 700;
+  color: var(--vt-text);
+}
+
+.vt-section-title {
+  color: var(--vt-muted);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--vt-border);
+  padding-bottom: 0.5rem;
+}
+
+/* Links */
+.vt-link {
+  color: var(--vt-green);
+  text-decoration: none;
+}
+.vt-link:hover {
+  color: #58e86b;
+  text-decoration: underline;
+}
+
+/* CVE pill */
+.vt-cve-pill {
+  background-color: var(--vt-surface);
+  border: 1px solid var(--vt-border);
+  border-radius: 6px;
+  color: var(--vt-text) !important;
+  transition: background-color 0.15s ease;
+}
+.vt-cve-pill:hover {
+  background-color: #1c2128;
+}
+
+/* Hint box */
+.vt-hint {
+  background-color: #1c1e1d;
+  border-left: 3px solid #d29922;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  color: #f0c77c;
+}
+
+/* Vulnerability description */
+.vt-description {
+  line-height: 1.75;
+  white-space: pre-wrap;
+  color: #c9d1d9;
+}
+
+/* Avatar */
+.vt-avatar {
+  width: 72px;
+  height: 72px;
+  background-color: var(--vt-green-dim);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #fff;
+}
+
+/* Footer */
+.vt-footer {
+  background-color: var(--vt-surface);
+  border-top: 1px solid var(--vt-border);
+}
+
+/* Form inputs in dark mode */
+.form-control,
+.input-group-text {
+  background-color: #0d1117;
+  border-color: var(--vt-border);
+  color: var(--vt-text);
+}
+.form-control:focus {
+  background-color: #0d1117;
+  border-color: var(--vt-green-dim);
+  color: var(--vt-text);
+  box-shadow: 0 0 0 0.2rem rgba(57, 211, 83, 0.2);
+}
+.form-control::placeholder {
+  color: var(--vt-muted);
+}
+
+/* Breadcrumb */
+.breadcrumb-item + .breadcrumb-item::before {
+  color: var(--vt-muted);
+}
+
+/* Scrollbar (webkit) */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--vt-bg); }
+::-webkit-scrollbar-thumb { background: var(--vt-border); border-radius: 4px; }

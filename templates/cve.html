@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}CVE Details – VulTutor{% endblock %}
+
+{% block content %}
+<div id="loadingState" class="text-center py-5">
+  <div class="spinner-border text-warning" role="status"></div>
+  <p class="mt-2 text-muted">Loading CVE data…</p>
+</div>
+
+<div id="cveContent" class="d-none">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/home" class="vt-link">Dashboard</a></li>
+      <li class="breadcrumb-item active font-monospace" id="cveCrumb"></li>
+    </ol>
+  </nav>
+
+  <div class="card vt-card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+      <span class="font-monospace fw-bold" id="cveTitle"></span>
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">Description</h5>
+      <p id="cveDesc" class="vt-description"></p>
+
+      <h5 class="mt-4 card-title">Related Vulnerability Modules</h5>
+      <div id="relatedVulns">
+        <p class="text-muted">None linked.</p>
+      </div>
+    </div>
+  </div>
+
+  <a href="/home" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+  </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async () => {
+  requireAuth();
+  const cveId = {{ cve_id | tojson }};
+
+  const res = await apiFetch(`/api/cve/${encodeURIComponent(cveId)}`);
+  if (!res.ok) {
+    const body = await res.json();
+    showFlash(body.message || "CVE not found.", "warning");
+    return;
+  }
+
+  const data = await res.json();
+
+  document.getElementById("cveCrumb").textContent = data.cveId;
+  document.getElementById("cveTitle").textContent = data.cveId;
+  document.getElementById("cveDesc").textContent = data.description;
+
+  const relDiv = document.getElementById("relatedVulns");
+  if (data.relatedVulnerabilities && data.relatedVulnerabilities.length > 0) {
+    relDiv.innerHTML = data.relatedVulnerabilities.map(v => `
+      <a href="/vulnerability/${v.vulnId}" class="btn btn-outline-success me-2 mb-2">
+        <i class="bi bi-bug me-1"></i>${escHtml(v.name)}
+      </a>`).join("");
+  }
+
+  document.getElementById("loadingState").classList.add("d-none");
+  document.getElementById("cveContent").classList.remove("d-none");
+})();
+</script>
+{% endblock %}

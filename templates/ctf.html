@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}CTF Challenge – VulTutor{% endblock %}
+
+{% block content %}
+<div id="loadingState" class="text-center py-5">
+  <div class="spinner-border text-danger" role="status"></div>
+  <p class="mt-2 text-muted">Loading CTF challenge…</p>
+</div>
+
+<div id="ctfContent" class="d-none">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/home" class="vt-link">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="#" class="vt-link" id="vulnLink"></a></li>
+      <li class="breadcrumb-item active">CTF Challenge</li>
+    </ol>
+  </nav>
+
+  <div class="card vt-card border-danger mb-4" id="ctfCard">
+    <div class="card-header bg-danger bg-opacity-25 d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-flag-fill me-2 text-danger"></i><strong>Capture The Flag</strong></span>
+      <span id="ctfBadge" class="badge bg-secondary">Not solved</span>
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">Challenge Description</h5>
+      <p id="ctfDesc" class="vt-description"></p>
+
+      <div id="resourceRow" class="mb-3">
+        <a id="ctfDownload" href="#" class="btn btn-sm btn-outline-info">
+          <i class="bi bi-download me-1"></i>Download Challenge Files
+        </a>
+      </div>
+
+      <div id="flagSection">
+        <label class="form-label fw-semibold">Submit Your Flag</label>
+        <div class="input-group">
+          <span class="input-group-text font-monospace text-danger">FLAG</span>
+          <input type="text" class="form-control font-monospace" id="flagInput"
+            placeholder="FLAG{...}" />
+          <button class="btn btn-danger" id="submitFlagBtn" onclick="submitFlag()">
+            <i class="bi bi-send me-1"></i>Submit
+          </button>
+        </div>
+        <div id="flagResult" class="mt-2"></div>
+      </div>
+
+      <div id="solvedBanner" class="alert alert-success d-none mt-3">
+        <i class="bi bi-trophy-fill me-2"></i>
+        <strong>Challenge Solved!</strong> You successfully completed this CTF.
+      </div>
+    </div>
+  </div>
+
+  <a href="/home" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+  </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const VULN_ID = {{ vuln_id }};
+let ctfId;
+
+async function loadCtf() {
+  requireAuth();
+  const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/ctf`);
+  if (!res.ok) {
+    const body = await res.json();
+    showFlash(body.message || "CTF not found.", "danger");
+    return;
+  }
+  const data = await res.json();
+  ctfId = data.ctfId;
+
+  document.getElementById("vulnLink").textContent = `Vulnerability #${VULN_ID}`;
+  document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
+  document.getElementById("ctfDesc").textContent = data.description;
+  document.getElementById("ctfDownload").href = data.path;
+
+  if (data.completed) {
+    document.getElementById("ctfBadge").textContent = "✓ Solved";
+    document.getElementById("ctfBadge").className = "badge bg-success";
+    document.getElementById("flagSection").classList.add("d-none");
+    document.getElementById("solvedBanner").classList.remove("d-none");
+  }
+
+  document.getElementById("loadingState").classList.add("d-none");
+  document.getElementById("ctfContent").classList.remove("d-none");
+}
+
+async function submitFlag() {
+  const flag = document.getElementById("flagInput").value.trim();
+  const resultDiv = document.getElementById("flagResult");
+  const btn = document.getElementById("submitFlagBtn");
+
+  if (!flag) return;
+
+  btn.disabled = true;
+  const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/ctf`, {
+    method: "POST",
+    body: JSON.stringify({ flag }),
+  });
+  btn.disabled = false;
+
+  const body = await res.json();
+  if (body.correct) {
+    resultDiv.innerHTML = `<span class="text-success"><i class="bi bi-trophy-fill me-1"></i>${escHtml(body.message)}</span>`;
+    document.getElementById("ctfBadge").textContent = "✓ Solved";
+    document.getElementById("ctfBadge").className = "badge bg-success";
+    document.getElementById("solvedBanner").classList.remove("d-none");
+    document.getElementById("flagSection").classList.add("d-none");
+  } else {
+    resultDiv.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
+  }
+}
+
+loadCtf();
+</script>
+{% endblock %}

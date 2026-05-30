@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Dashboard – VulTutor{% endblock %}
+
+{% block content %}
+<div id="homeContent">
+  <!-- Skeleton shown while loading -->
+  <div id="loadingState" class="text-center py-5">
+    <div class="spinner-border text-success" role="status"></div>
+    <p class="mt-2 text-muted">Loading dashboard…</p>
+  </div>
+
+  <!-- Main content (hidden until loaded) -->
+  <div id="dashContent" class="d-none">
+
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="vt-heading mb-0">Welcome back, <span id="usernameDisplay" class="text-success"></span></h2>
+        <p class="text-muted mb-0">Continue your security learning journey</p>
+      </div>
+    </div>
+
+    <!-- Vulnerabilities -->
+    <h4 class="vt-section-title mb-3"><i class="bi bi-bug me-2"></i>Vulnerability Modules</h4>
+    <div id="vulnGrid" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5"></div>
+
+    <!-- CVEs -->
+    <h4 class="vt-section-title mb-3"><i class="bi bi-database-exclamation me-2"></i>CVE Reference Library</h4>
+    <div id="cveList" class="row row-cols-1 row-cols-md-2 g-2"></div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async () => {
+  const token = requireAuth();
+
+  const res = await apiFetch("/api/home");
+  if (!res.ok) { window.location.href = "/login"; return; }
+
+  const data = await res.json();
+  document.getElementById("usernameDisplay").textContent = data.username;
+
+  // Vulnerability cards
+  const vulnGrid = document.getElementById("vulnGrid");
+  data.vulnerabilities.forEach(v => {
+    // Completion badge — driven by CTF only
+    const badgeClass = v.ctfCompleted ? "bg-success" : "bg-secondary";
+    const badgeLabel = v.ctfCompleted
+      ? '<i class="bi bi-check-lg me-1"></i>Completed'
+      : 'In Progress';
+
+    // Quiz pill
+    const quizDone = v.questionsCompleted ?? 0;
+    const quizTotal = v.questionsTotal ?? 0;
+    const quizPillClass = quizDone === quizTotal && quizTotal > 0
+      ? "text-success"
+      : quizDone > 0 ? "text-warning" : "text-muted";
+    const quizLabel = `${quizDone}/${quizTotal} questions`;
+
+    // CTF pill
+    const ctfPillClass = v.ctfCompleted ? "text-success" : "text-muted";
+    const ctfLabel = v.ctfCompleted
+      ? '<i class="bi bi-flag-fill me-1"></i>CTF solved'
+      : '<i class="bi bi-flag me-1"></i>CTF unsolved';
+
+    vulnGrid.innerHTML += `
+      <div class="col">
+        <div class="card vt-card h-100 ${v.ctfCompleted ? "vt-card-done" : ""}">
+          <div class="card-body d-flex flex-column">
+
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="card-title mb-0">${escHtml(v.name)}</h5>
+              <span class="badge ${badgeClass} ms-2">${badgeLabel}</span>
+            </div>
+
+            <!-- Status indicators -->
+            <div class="d-flex gap-3 mb-3 small">
+              <span class="${quizPillClass}">
+                <i class="bi bi-question-circle me-1"></i>${quizLabel}
+                <small class="text-muted">(optional)</small>
+              </span>
+              <span class="${ctfPillClass}">${ctfLabel}</span>
+            </div>
+
+            <div class="d-flex gap-2 mt-auto">
+              <a href="/vulnerability/${v.vulnId}" class="btn btn-sm btn-outline-light flex-fill">
+                <i class="bi bi-book me-1"></i>Learn
+              </a>
+              <a href="/vulnerability/${v.vulnId}/questions" class="btn btn-sm btn-outline-success flex-fill">
+                <i class="bi bi-question-circle me-1"></i>Quiz
+              </a>
+              <a href="/vulnerability/${v.vulnId}/ctf" class="btn btn-sm btn-outline-danger flex-fill">
+                <i class="bi bi-flag me-1"></i>CTF
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </div>`;
+  });
+
+  // CVE pills
+  const cveList = document.getElementById("cveList");
+  data.cves.forEach(c => {
+    cveList.innerHTML += `
+      <div class="col">
+        <a href="/cve/${encodeURIComponent(c.cveId)}" class="card vt-card vt-cve-pill text-decoration-none d-block px-3 py-2">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+          <span class="font-monospace">${escHtml(c.cveId)}</span>
+          <i class="bi bi-arrow-right float-end mt-1 text-muted"></i>
+        </a>
+      </div>`;
+  });
+
+  document.getElementById("loadingState").classList.add("d-none");
+  document.getElementById("dashContent").classList.remove("d-none");
+})();
+</script>
+{% endblock %}
