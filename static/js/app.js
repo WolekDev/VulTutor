@@ -26,7 +26,7 @@ function requireAuth() {
   const token = getToken();
   if (!token) {
     window.location.href = "/login";
-    throw new Error("Unauthenticated – redirecting");
+    throw new Error("Unauthenticated - redirecting");
   }
   return token;
 }

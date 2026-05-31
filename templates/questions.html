@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Quiz – VulTutor{% endblock %}
+{% block title %}Quiz - VulTutor{% endblock %}
 
 {% block content %}
 <div id="loadingState" class="text-center py-5">
@@ -40,7 +40,7 @@ async function loadQuestions() {
   const data = await res.json();
   questions = data.questions;
 
-  document.getElementById("vulnLink").textContent = `Vulnerability #${VULN_ID}`;
+  document.getElementById("vulnLink").textContent = data.vulnName;
   document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
 
   renderQuestions();

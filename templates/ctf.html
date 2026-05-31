@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}CTF Challenge – VulTutor{% endblock %}
+{% block title %}CTF Challenge - VulTutor{% endblock %}
 
 {% block content %}
 <div id="loadingState" class="text-center py-5">
@@ -73,7 +73,7 @@ async function loadCtf() {
   const data = await res.json();
   ctfId = data.ctfId;
 
-  document.getElementById("vulnLink").textContent = `Vulnerability #${VULN_ID}`;
+  document.getElementById("vulnLink").textContent = data.vulnName;
   document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
   document.getElementById("ctfDesc").textContent = data.description;
   document.getElementById("ctfDownload").href = data.path;

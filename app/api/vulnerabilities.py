@@ -71,7 +71,7 @@ def get_vuln_questions(vulnId):
             }
         )
 
-    return jsonify({"vulnId": vulnId, "questions": q_list}), 200
+    return jsonify({"vulnId": vulnId, "vulnName": vuln.name, "questions": q_list}), 200
 
 
 # ---------------------------------------------------------------------------
@@ -134,6 +134,7 @@ def get_ctf(vulnId):
     return jsonify(
         {
             "ctfId": ctf.ctfId,
+            "vulnName": vuln.name,
             "description": ctf.description,
             "path": ctf.path,
             "completed": completed,
