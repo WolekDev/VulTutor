@@ -1,11 +1,7 @@
 """
-VulTutor development entry point.
+VulTutor entry point.
 
-Run:
-    python run.py
-
-Then seed the database (first time only):
-    python seed.py
+Run: python run.py
 """
 
 from app import create_app

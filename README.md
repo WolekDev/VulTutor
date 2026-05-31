@@ -1,8 +1,11 @@
-# VulTutor
+<div align="center">
+    <img src="static/img/LOGO.png", width="200">
+    <h1>VulTutor</h1>
+</div>
 
 VulTutor is a cybersecurity learning platform inspired by [WebGoat](https://owasp.org/www-project-webgoat/).
 Users explore intentionally vulnerable exercises, quiz questions with hints, CTF (Capture The Flag) challenges,
-and real-world CVE references — all in a safe, local environment.
+and real-world CVE references.
 
 ---
 
@@ -10,15 +13,17 @@ and real-world CVE references — all in a safe, local environment.
 
 | Layer      | Technology                               |
 |------------|------------------------------------------|
-| Backend    | Python · Flask · SQLAlchemy · SQLite     |
+| Backend    | Python, Flask, SQLAlchemy, SQLite        |
 | Auth       | Flask-JWT-Extended (Bearer tokens)       |
 | Validation | Marshmallow schemas                      |
-| Frontend   | Flask (Jinja2 templates) · Bootstrap 5   |
+| Frontend   | Flask (Jinja2 templates), Bootstrap 5    |
 | API Docs   | Swagger UI (flask-swagger-ui)            |
 
 ---
 
 ## Getting Started
+
+### If you are on linux, just run init.sh and then run.sh
 
 ### 1. Install dependencies
 
@@ -83,8 +88,7 @@ The raw OpenAPI 3.0 spec is served at:
 ### Testing endpoints in Swagger UI
 
 1. Open **http://localhost:8080/docs/** in your browser.
-2. To test protected endpoints, first call **POST /api/sessions** (or **POST /api/register**)
-   with a username and password — the response contains a `token`.
+2. To test protected endpoints, first call **POST /api/sessions** (or **POST /api/register**) with a username and password - the response contains a `token`.
 3. Click the **Authorize** button (padlock icon) at the top of the page.
 4. Enter `Bearer <your_token>` in the **Value** field and click **Authorize**.
 5. All subsequent requests in the UI will include the JWT automatically.
@@ -154,15 +158,9 @@ VulTutor/
 
 ## Running the Unit Tests
 
-The test suite uses **pytest** with an in-memory SQLite database — no running server or seeded database required.
+The test suite uses **pytest** with an in-memory SQLite database - no running server or seeded database required.
 
 ### Run all tests
-
-```bash
-python -m pytest tests/
-```
-
-### Run with verbose output (recommended)
 
 ```bash
 python -m pytest tests/ -v

@@ -1,5 +1,5 @@
 /* ============================================================
-   VulTutor – Custom styles (dark cybersecurity theme)
+   DARK STYLE
    ============================================================ */
 
 :root {
@@ -37,6 +37,13 @@ main {
   font-size: 1.3rem;
   color: var(--vt-green) !important;
   letter-spacing: -0.3px;
+}
+
+.vt-navbar-logo {
+  max-height: 1.65rem;
+  width: auto;
+  margin-right: 0.5rem;
+  vertical-align: text-bottom;
 }
 
 /* Cards */

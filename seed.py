@@ -1,10 +1,9 @@
 """
-Populates the database with sample data for development and testing.
+Populates the database
 
-Usage:
-    python seed.py
+Usage: python seed.py
 
-Test credentials: student / password123
+Test user credentials: student / password123
 """
 
 from werkzeug.security import generate_password_hash
@@ -44,7 +43,7 @@ def seed():
                 "Find an input that always evaluates to TRUE and comments out the rest."
             ),
             path="/api/challenges/sqli_login.zip",
-            flag="FLAG{sqli_bypass_success}",
+            flag="sqli_bypass_success",
         )
         ctf_xss = CTF(
             description=(
@@ -54,7 +53,7 @@ def seed():
                 "The page does NOT sanitise or encode user input before rendering."
             ),
             path="/api/challenges/xss_cookie.zip",
-            flag="FLAG{xss_cookie_stolen}",
+            flag="xss_cookie_stolen",
         )
         ctf_pt = CTF(
             description=(
@@ -64,7 +63,7 @@ def seed():
                 "Read /etc/passwd and find the flag hidden in the last comment field."
             ),
             path="/api/challenges/path_traversal.zip",
-            flag="FLAG{path_traversal_lfi}",
+            flag="path_traversal_lfi",
         )
         db.session.add_all([ctf_sqli, ctf_xss, ctf_pt])
         db.session.flush()
@@ -98,9 +97,9 @@ def seed():
             description=(
                 "Cross-Site Scripting (XSS) is a client-side code injection attack.\n\n"
                 "Types of XSS:\n"
-                "1. Reflected – payload comes from the current HTTP request\n"
-                "2. Stored   – payload is saved in the database and served to all visitors\n"
-                "3. DOM-based – vulnerability exists in client-side JavaScript\n\n"
+                "1. Reflected - payload comes from the current HTTP request\n"
+                "2. Stored   - payload is saved in the database and served to all visitors\n"
+                "3. DOM-based - vulnerability exists in client-side JavaScript\n\n"
                 "XSS can be used to:\n"
                 "• Steal session cookies and hijack accounts\n"
                 "• Redirect users to phishing sites\n"
@@ -119,14 +118,14 @@ def seed():
                 "Path Traversal (Directory Traversal) lets an attacker read arbitrary files "
                 "on the server by manipulating file-path input.\n\n"
                 "Common targets:\n"
-                "• /etc/passwd  – Linux user list\n"
-                "• /etc/shadow  – Hashed passwords (requires root)\n"
+                "• /etc/passwd  - Linux user list\n"
+                "• /etc/shadow  - Hashed passwords (requires root)\n"
                 "• Application source code and config files with credentials\n\n"
                 "The attack uses ../ sequences to escape the intended directory:\n"
                 "  /download?file=../../../../etc/passwd\n\n"
                 "URL-encoded variants bypass naive filters:\n"
-                "  %2e%2e%2f  →  ../\n"
-                "  %2e%2e/    →  ../\n\n"
+                "  %2e%2e%2f  ->  ../\n"
+                "  %2e%2e/    ->  ../\n\n"
                 "Prevention: resolve the canonical path and verify it starts with the allowed "
                 "base directory; use a whitelist of permitted files; never pass user input "
                 "directly to filesystem APIs."
@@ -213,7 +212,7 @@ def seed():
             Hint(questionId=questions[3].questionId, hintNumber=1,
                  hint="This HTML element embeds executable code. Its name matches the language."),
             Hint(questionId=questions[3].questionId, hintNumber=2,
-                 hint="<script>alert('XSS')</script> – the tag is 'script'."),
+                 hint="<script>alert('XSS')</script> - the tag is 'script'."),
 
             # XSS Q2
             Hint(questionId=questions[4].questionId, hintNumber=1,
@@ -301,7 +300,7 @@ def seed():
         db.session.flush()
 
         # ------------------------------------------------------------------
-        # CVE → Vulnerability links
+        # CVE -> Vulnerability links
         # ------------------------------------------------------------------
         links = [
             CVEVulnerability(cveId="CVE-2019-11043", vulnId=vuln_sqli.vulnId),
@@ -314,11 +313,11 @@ def seed():
         db.session.commit()
 
     print("Database seeded successfully!")
-    print("\nTest credentials:")
+    print("Test credentials:")
     print("  Username : student")
     print("  Password : password123")
-    print("\nVulnerabilities seeded: SQL Injection, XSS, Path Traversal")
-    print("CVEs seeded           : CVE-2021-44228, CVE-2017-0144, CVE-2014-0160, CVE-2019-11043, CVE-2020-1938")
+    print("Vulnerabilities seeded: SQL Injection, XSS, Path Traversal")
+    print("CVEs seeded : CVE-2021-44228, CVE-2017-0144, CVE-2014-0160, CVE-2019-11043, CVE-2020-1938")
 
 
 if __name__ == "__main__":

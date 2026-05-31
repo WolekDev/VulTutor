@@ -49,7 +49,7 @@ def create_app(config_class: type = Config) -> Flask:
     from app.frontend import frontend_bp
     app.register_blueprint(frontend_bp)
 
-    # Swagger UI at /docs — reads the spec from /api/openapi.yaml
+    # Swagger UI at /docs - reads the spec from /api/openapi.yaml
     swagger_bp = get_swaggerui_blueprint(
         "/docs",
         "/api/openapi.yaml",

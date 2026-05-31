@@ -45,7 +45,7 @@
   // Vulnerability cards
   const vulnGrid = document.getElementById("vulnGrid");
   data.vulnerabilities.forEach(v => {
-    // Completion badge — driven by CTF only
+    // Completion badge - driven by CTF only
     const badgeClass = v.ctfCompleted ? "bg-success" : "bg-secondary";
     const badgeLabel = v.ctfCompleted
       ? '<i class="bi bi-check-lg me-1"></i>Completed'
