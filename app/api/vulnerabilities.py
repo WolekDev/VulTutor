@@ -29,7 +29,7 @@ def get_vuln_description(vulnId):
     if err:
         return err
 
-    vuln = Vulnerability.query.get(vulnId)
+    vuln = db.session.get(Vulnerability, vulnId)
     if not vuln:
         return jsonify({"code": 404, "message": "Vulnerability not found"}), 404
 
@@ -45,7 +45,7 @@ def get_vuln_questions(vulnId):
     if err:
         return err
 
-    vuln = Vulnerability.query.get(vulnId)
+    vuln = db.session.get(Vulnerability, vulnId)
     if not vuln:
         return jsonify({"code": 404, "message": "Vulnerability not found"}), 404
 
@@ -91,7 +91,7 @@ def submit_answer(vulnId, questionId):
     except ValidationError as exc:
         return jsonify({"code": 400, "message": exc.messages}), 400
 
-    vuln = Vulnerability.query.get(vulnId)
+    vuln = db.session.get(Vulnerability, vulnId)
     if not vuln:
         return jsonify({"code": 404, "message": "Vulnerability not found"}), 404
 
@@ -119,14 +119,14 @@ def get_ctf(vulnId):
     if err:
         return err
 
-    vuln = Vulnerability.query.get(vulnId)
+    vuln = db.session.get(Vulnerability, vulnId)
     if not vuln:
         return jsonify({"code": 404, "message": "Vulnerability not found"}), 404
 
     if not vuln.ctfId:
         return jsonify({"code": 404, "message": "No CTF challenge for this vulnerability"}), 404
 
-    ctf = CTF.query.get(vuln.ctfId)
+    ctf = db.session.get(CTF, vuln.ctfId)
     completed = (
         CompletedCTF.query.filter_by(userId=user_id, ctfId=ctf.ctfId).first() is not None
     )
@@ -158,14 +158,14 @@ def submit_flag(vulnId):
     except ValidationError as exc:
         return jsonify({"code": 400, "message": exc.messages}), 400
 
-    vuln = Vulnerability.query.get(vulnId)
+    vuln = db.session.get(Vulnerability, vulnId)
     if not vuln:
         return jsonify({"code": 404, "message": "Vulnerability not found"}), 404
 
     if not vuln.ctfId:
         return jsonify({"code": 404, "message": "No CTF challenge for this vulnerability"}), 404
 
-    ctf = CTF.query.get(vuln.ctfId)
+    ctf = db.session.get(CTF, vuln.ctfId)
     correct = data["flag"].strip() == ctf.flag.strip()
 
     if correct:

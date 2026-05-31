@@ -16,7 +16,7 @@ def _require_user():
     try:
         verify_jwt_in_request()
         user_id = int(get_jwt_identity())
-        user = Account.query.get(user_id)
+        user = db.session.get(Account, user_id)
         if not user:
             raise ValueError("user not found")
         return user, None

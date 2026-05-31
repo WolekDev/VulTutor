@@ -1,6 +1,7 @@
 from flask import jsonify
 from flask_jwt_extended import verify_jwt_in_request
 
+from app import db
 from app.api import api_bp
 from app.models import CVE, Vulnerability
 from app.validators import CVE_PATTERN
@@ -16,13 +17,13 @@ def get_cve(cveId):
     if not CVE_PATTERN.match(cveId):
         return jsonify({"code": 400, "message": "Invalid CVE ID format (expected CVE-YYYY-NNNNN)"}), 400
 
-    cve = CVE.query.get(cveId)
+    cve = db.session.get(CVE, cveId)
     if not cve:
         return jsonify({"code": 404, "message": "CVE not found"}), 404
 
     related = []
     for link in cve.vuln_links:
-        v = Vulnerability.query.get(link.vulnId)
+        v = db.session.get(Vulnerability, link.vulnId)
         if v:
             related.append({"vulnId": v.vulnId, "name": v.name})
 

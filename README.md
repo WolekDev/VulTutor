@@ -138,5 +138,67 @@ VulTutor/
 │       └── routes.py
 │
 ├── templates/              # Jinja2 templates
-└── static/                 # CSS and JS assets
+├── static/                 # CSS and JS assets
+└── tests/                  # pytest unit tests
+    ├── conftest.py          # Fixtures: in-memory DB, test client, auth helpers
+    ├── test_register.py
+    ├── test_sessions.py
+    ├── test_home.py
+    ├── test_vulnerabilities.py
+    ├── test_ctf.py
+    ├── test_cve.py
+    └── test_account.py
 ```
+
+---
+
+## Running the Unit Tests
+
+The test suite uses **pytest** with an in-memory SQLite database — no running server or seeded database required.
+
+### Run all tests
+
+```bash
+python -m pytest tests/
+```
+
+### Run with verbose output (recommended)
+
+```bash
+python -m pytest tests/ -v
+```
+
+### Run a single test file
+
+```bash
+python -m pytest tests/test_sessions.py -v
+```
+
+### Run a single test by name
+
+```bash
+python -m pytest tests/ -v -k "test_login_success"
+```
+
+### Expected output
+
+```
+80 passed in ~30s
+```
+
+Each test gets its own isolated in-memory database seeded with:
+- One user (`testuser` / `password123`)
+- One vulnerability with a CTF challenge, one question, and one hint
+- One CVE (`CVE-2021-99999`) linked to the vulnerability
+
+The following is tested for every endpoint group:
+
+| File | Endpoint(s) | Tests |
+|---|---|---|
+| `test_register.py` | `POST /api/register` | Success, validation errors, duplicate conflicts |
+| `test_sessions.py` | `POST/DELETE /api/sessions` | Login, wrong credentials, logout, token revocation |
+| `test_home.py` | `GET /api/home` | Dashboard shape, initial progress, auth guards |
+| `test_vulnerabilities.py` | `GET/POST /api/vulnerabilities/…` | Description, questions, answer submission, completion tracking |
+| `test_ctf.py` | `GET/POST /api/vulnerabilities/{id}/ctf` | Challenge retrieval, correct/wrong flags, completion state |
+| `test_cve.py` | `GET /api/cve/{cveId}` | Lookup, related vulns, invalid CVE format, 404 |
+| `test_account.py` | `GET/PUT/DELETE /api/account` | Profile, field updates, validation, duplicate checks, deletion |

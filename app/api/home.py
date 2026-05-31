@@ -1,6 +1,7 @@
 from flask import jsonify
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 
+from app import db
 from app.api import api_bp
 from app.models import Account, Vulnerability, CVE, CompletedQuestion, CompletedCTF
 
@@ -13,7 +14,7 @@ def home():
         return jsonify({"code": 401, "message": "Unauthorized"}), 401
 
     user_id = int(get_jwt_identity())
-    user = Account.query.get(user_id)
+    user = db.session.get(Account, user_id)
     if not user:
         return jsonify({"code": 401, "message": "Unauthorized"}), 401
 
