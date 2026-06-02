@@ -251,48 +251,57 @@ def seed():
         # ------------------------------------------------------------------
         cves = [
             CVE(
-                cveId="CVE-2021-44228",
+                cveId="CVE-2025-46052",
                 description=(
-                    "Apache Log4j2 2.0-beta9 through 2.15.0 JNDI features used in configuration, "
-                    "log messages, and parameters do not protect against attacker-controlled LDAP "
-                    "and other JNDI endpoints. An attacker who can control log messages can execute "
-                    "arbitrary code loaded from remote LDAP servers. Known as 'Log4Shell'. "
-                    "CVSS 10.0 (Critical)."
+                    "Vulnerability: SQL Injection\n\n"
+                    "An error-based SQL Injection (SQLi) vulnerability in WebERP v4.15.2 allows"
+                    "attackers to execute arbitrary SQL command and extract sensitive data by "
+                    "injecting a crafted payload into the DEL form field in a POST request to "
+                    "/StockCounts.php\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2025-46052\n"
+                    "Exploit info at: https://github.com/johnchd/CVEs/blob/main/WebERP/CVE-2025-46052%20-%20SQLi.md"
                 ),
             ),
             CVE(
-                cveId="CVE-2017-0144",
+                cveId="CVE-2025-49717",
                 description=(
-                    "The SMBv1 server in multiple versions of Microsoft Windows allows remote "
-                    "attackers to execute arbitrary code via crafted packets "
-                    "('Windows SMB Remote Code Execution Vulnerability'). Exploited by WannaCry "
-                    "and NotPetya ransomware via the EternalBlue exploit. CVSS 9.3 (Critical)."
+                    "Vulnerability: Buffer Overflow\n\n"
+                    "Heap-based buffer overflow in SQL Server allows an authorized attacker to "
+                    "execute code over a network.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2025-49717\n"
+                    "Microsoft's report: https://msrc.microsoft.com/update-guide/vulnerability/CVE-2025-49717"
                 ),
             ),
             CVE(
-                cveId="CVE-2014-0160",
+                cveId="CVE-2021-46667",
                 description=(
-                    "The TLS/DTLS heartbeat extension in OpenSSL 1.0.1 before 1.0.1g does not "
-                    "properly validate the payload length, allowing remote attackers to read "
-                    "process memory and leak private keys, credentials, and other secrets. "
-                    "Known as the 'Heartbleed' bug. CVSS 7.5 (High)."
+                    "Vulnerability: Integer Overflow\n\n"
+                    "MariaDB before 10.6.5 has a sql_lex.cc integer overflow, leading to "
+                    "an application crash.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2021-46667\n"
+                    "Additional info: https://www.sentinelone.com/vulnerability-database/cve-2021-46667/"
                 ),
             ),
             CVE(
-                cveId="CVE-2019-11043",
+                cveId="CVE-2026-33827",
                 description=(
-                    "In PHP versions 7.1.x below 7.1.33, 7.2.x below 7.2.24 and 7.3.x below "
-                    "7.3.11 in certain FPM configurations, it is possible to make FPM parse "
-                    "PHP queries in a way that leads to remote code execution. CVSS 9.8 (Critical)."
+                    "Vulnerability: Race Condition\n\n"
+                    "Concurrent execution using shared resource with improper synchronization"
+                    "('race condition') in Windows TCP/IP allows an unauthorized attacker to "
+                    "execute code over a network.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2026-33827\n"
+                    "Additional info: https://www.sentinelone.com/vulnerability-database/cve-2026-33827/"
                 ),
             ),
             CVE(
-                cveId="CVE-2020-1938",
+                cveId="CVE-2026-2441",
                 description=(
-                    "When using the Apache JServ Protocol (AJP), Apache Tomcat does not properly "
-                    "validate incoming connections, allowing an unauthenticated attacker to read "
-                    "arbitrary files or achieve remote code execution via the AJP connector. "
-                    "Known as 'Ghostcat'. CVSS 9.8 (Critical)."
+                    "Vulnerability: Use After Free\n\n"
+                    "Use after free in CSS in Google Chrome prior to 145.0.7632.75 allowed a "
+                    "remote attacker to execute arbitrary code inside a sandbox via a "
+                    "crafted HTML page. (Chromium security severity: High)\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/cve-2026-2441\n"
+                    "Additional info: https://www.sentinelone.com/vulnerability-database/cve-2026-2441/"
                 ),
             ),
         ]
@@ -303,10 +312,11 @@ def seed():
         # CVE -> Vulnerability links
         # ------------------------------------------------------------------
         links = [
-            CVEVulnerability(cveId="CVE-2019-11043", vulnId=vuln_sqli.vulnId),
-            CVEVulnerability(cveId="CVE-2021-44228", vulnId=vuln_xss.vulnId),
-            CVEVulnerability(cveId="CVE-2014-0160",  vulnId=vuln_pt.vulnId),
-            CVEVulnerability(cveId="CVE-2020-1938",  vulnId=vuln_pt.vulnId),
+            CVEVulnerability(cveId="CVE-2025-46052", vulnId=vuln_sqli.vulnId),
+            # CVEVulnerability(cveId="CVE-2025-49717", vulnId=vuln_buff_over.vulnId),
+            # CVEVulnerability(cveId="CVE-2021-46667", vulnId=vuln_int_over.vulnId),
+            # CVEVulnerability(cveId="CVE-2026-33827", vulnId=vuln_race_cond.vulnId),
+            # CVEVulnerability(cveId="CVE-2026-2441", vulnId=vuln_uaf.vulnId),
         ]
         db.session.add_all(links)
 
@@ -317,7 +327,7 @@ def seed():
     print("  Username : student")
     print("  Password : password123")
     print("Vulnerabilities seeded: SQL Injection, XSS, Path Traversal")
-    print("CVEs seeded : CVE-2021-44228, CVE-2017-0144, CVE-2014-0160, CVE-2019-11043, CVE-2020-1938")
+    print("CVEs seeded : CVE-2025-46052, CVE-2017-0144, CVE-2014-0160, CVE-2019-11043, CVE-2020-1938")
 
 
 if __name__ == "__main__":

@@ -52,4 +52,18 @@ def home():
 
     cve_list = [{"cveId": c.cveId} for c in CVE.query.all()]
 
+    # --- CVE NATURAL SORTING IMPLEMENTATION ---
+    def cve_sort_key(cve_dict):
+        # Splits 'CVE-2026-1234' into ['CVE', '2026', '1234']
+        parts = cve_dict["cveId"].split("-")
+        try:
+            # Sort by year (int) first, then sequence number (int)
+            return (int(parts[1]), int(parts[2]))
+        except (IndexError, ValueError):
+            # Fallback to standard string sorting if formatting is unusual
+            return (0, cve_dict["cveId"])
+
+    cve_list.sort(key=cve_sort_key)
+    # ------------------------------------------
+
     return jsonify({"username": user.username, "vulnerabilities": vuln_list, "cves": cve_list}), 200

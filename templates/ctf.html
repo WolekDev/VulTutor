@@ -35,8 +35,7 @@
         <label class="form-label fw-semibold">Submit Your Flag</label>
         <div class="input-group">
           <span class="input-group-text font-monospace text-danger">FLAG</span>
-          <input type="text" class="form-control font-monospace" id="flagInput"
-            placeholder="FLAG{...}" />
+          <input type="text" class="form-control font-monospace" id="flagInput" placeholder="" />
           <button class="btn btn-danger" id="submitFlagBtn" onclick="submitFlag()">
             <i class="bi bi-send me-1"></i>Submit
           </button>
@@ -59,62 +58,62 @@
 
 {% block scripts %}
 <script>
-const VULN_ID = {{ vuln_id }};
-let ctfId;
+  const VULN_ID = {{ vuln_id }};
+  let ctfId;
 
-async function loadCtf() {
-  requireAuth();
-  const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/ctf`);
-  if (!res.ok) {
+  async function loadCtf() {
+    requireAuth();
+    const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/ctf`);
+    if (!res.ok) {
+      const body = await res.json();
+      showFlash(body.message || "CTF not found.", "danger");
+      return;
+    }
+    const data = await res.json();
+    ctfId = data.ctfId;
+
+    document.getElementById("vulnLink").textContent = data.vulnName;
+    document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
+    document.getElementById("ctfDesc").textContent = data.description;
+    document.getElementById("ctfDownload").href = data.path;
+
+    if (data.completed) {
+      document.getElementById("ctfBadge").textContent = "✓ Solved";
+      document.getElementById("ctfBadge").className = "badge bg-success";
+      document.getElementById("flagSection").classList.add("d-none");
+      document.getElementById("solvedBanner").classList.remove("d-none");
+    }
+
+    document.getElementById("loadingState").classList.add("d-none");
+    document.getElementById("ctfContent").classList.remove("d-none");
+  }
+
+  async function submitFlag() {
+    const flag = document.getElementById("flagInput").value.trim();
+    const resultDiv = document.getElementById("flagResult");
+    const btn = document.getElementById("submitFlagBtn");
+
+    if (!flag) return;
+
+    btn.disabled = true;
+    const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/ctf`, {
+      method: "POST",
+      body: JSON.stringify({ flag }),
+    });
+    btn.disabled = false;
+
     const body = await res.json();
-    showFlash(body.message || "CTF not found.", "danger");
-    return;
-  }
-  const data = await res.json();
-  ctfId = data.ctfId;
-
-  document.getElementById("vulnLink").textContent = data.vulnName;
-  document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
-  document.getElementById("ctfDesc").textContent = data.description;
-  document.getElementById("ctfDownload").href = data.path;
-
-  if (data.completed) {
-    document.getElementById("ctfBadge").textContent = "✓ Solved";
-    document.getElementById("ctfBadge").className = "badge bg-success";
-    document.getElementById("flagSection").classList.add("d-none");
-    document.getElementById("solvedBanner").classList.remove("d-none");
+    if (body.correct) {
+      resultDiv.innerHTML = `<span class="text-success"><i class="bi bi-trophy-fill me-1"></i>${escHtml(body.message)}</span>`;
+      document.getElementById("ctfBadge").textContent = "✓ Solved";
+      document.getElementById("ctfBadge").className = "badge bg-success";
+      document.getElementById("solvedBanner").classList.remove("d-none");
+      document.getElementById("flagSection").classList.add("d-none");
+    } else {
+      resultDiv.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
+    }
   }
 
-  document.getElementById("loadingState").classList.add("d-none");
-  document.getElementById("ctfContent").classList.remove("d-none");
-}
-
-async function submitFlag() {
-  const flag = document.getElementById("flagInput").value.trim();
-  const resultDiv = document.getElementById("flagResult");
-  const btn = document.getElementById("submitFlagBtn");
-
-  if (!flag) return;
-
-  btn.disabled = true;
-  const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/ctf`, {
-    method: "POST",
-    body: JSON.stringify({ flag }),
-  });
-  btn.disabled = false;
-
-  const body = await res.json();
-  if (body.correct) {
-    resultDiv.innerHTML = `<span class="text-success"><i class="bi bi-trophy-fill me-1"></i>${escHtml(body.message)}</span>`;
-    document.getElementById("ctfBadge").textContent = "✓ Solved";
-    document.getElementById("ctfBadge").className = "badge bg-success";
-    document.getElementById("solvedBanner").classList.remove("d-none");
-    document.getElementById("flagSection").classList.add("d-none");
-  } else {
-    resultDiv.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
-  }
-}
-
-loadCtf();
+  loadCtf();
 </script>
 {% endblock %}
