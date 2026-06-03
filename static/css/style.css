@@ -26,6 +26,11 @@ main {
   flex: 1;
 }
 
+.vt-login-logo {
+  max-height: 10rem;
+  width: auto;
+}
+
 /* Navbar */
 .vt-navbar {
   background-color: var(--vt-surface);
