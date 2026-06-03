@@ -40,7 +40,7 @@ def seed():
                 "The backend query is:\n"
                 "  SELECT * FROM users WHERE username='<input>' AND password='<input>'\n"
             ),
-            path="/instance/ctf/sqli_login.zip",
+            path="/static/ctf/sqli_login.zip",
             flag="sqli_bypass_success",
         )
         ctf_buff_over = CTF(
@@ -49,7 +49,7 @@ def seed():
                 "You need to access the admin dashboard.\n"
                 "You know that the admin's user id is 0.\n"
             ),
-            path="/instance/ctf/buffer_overflow.zip",
+            path="/static/ctf/buffer_overflow.zip",
             flag="admin_dashboard_secret",
         )
         ctf_int_over = CTF(
@@ -58,21 +58,21 @@ def seed():
                 "The game store uses a 'Name Your Price' system (like itch.io) instead of a fixed price.\n"
                 "You know the store uses uint16_t to store the price.\n"
             ),
-            path="/instance/ctf/integer_overflow.zip",
+            path="/static/ctf/integer_overflow.zip",
             flag="yay_free_gta6",
         )
         ctf_race_cond = CTF(
             description=(
                 "NOT IMPLEMENTED\n"
             ),
-            path="/instance/ctf/race_condition.zip",
+            path="/static/ctf/race_condition.zip",
             flag="flag",
         )
         ctf_uaf = CTF(
             description=(
                 "NOT IMPLEMENTED\n"
             ),
-            path="/instance/ctf/use_after_free.zip",
+            path="/static/ctf/use_after_free.zip",
             flag="flag",
         )
         db.session.add_all([ctf_sqli, ctf_buff_over, ctf_int_over, ctf_race_cond, ctf_uaf])

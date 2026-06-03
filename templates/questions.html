@@ -21,54 +21,64 @@
 
   <div id="questionList"></div>
 
-  <a href="/home" class="btn btn-outline-secondary mt-3">
-    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
-  </a>
+  <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+    <a href="/vulnerability/{{ vuln_id }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Vulnerability Overview
+    </a>
+
+    <a href="/home" class="btn btn-link text-muted">
+      <i class="bi bi-grid-fill me-1"></i> Dashboard
+    </a>
+
+    <a href="/vulnerability/{{ vuln_id }}/ctf" class="btn btn-success">
+      Go to CTF Challenge <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-const VULN_ID = {{ vuln_id }};
-let questions = [];
+  const VULN_ID = {{ vuln_id }};
+  let questions = [];
 
-async function loadQuestions() {
-  requireAuth();
-  const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/questions`);
-  if (!res.ok) { showFlash("Failed to load questions.", "danger"); return; }
+  async function loadQuestions() {
+    requireAuth();
+    const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/questions`);
+    if (!res.ok) { showFlash("Failed to load questions.", "danger"); return; }
 
-  const data = await res.json();
-  questions = data.questions;
+    const data = await res.json();
+    questions = data.questions;
 
-  document.getElementById("vulnLink").textContent = data.vulnName;
-  document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
+    document.getElementById("vulnLink").textContent = data.vulnName;
+    document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
 
-  renderQuestions();
+    renderQuestions();
 
-  document.getElementById("loadingState").classList.add("d-none");
-  document.getElementById("quizContent").classList.remove("d-none");
-}
+    document.getElementById("loadingState").classList.add("d-none");
+    document.getElementById("quizContent").classList.remove("d-none");
+  }
 
-function renderQuestions() {
-  const completed = questions.filter(q => q.completed).length;
-  document.getElementById("progressText").textContent =
-    `${completed} / ${questions.length} questions completed`;
+  function renderQuestions() {
+    const completed = questions.filter(q => q.completed).length;
+    document.getElementById("progressText").textContent =
+      `${completed} / ${questions.length} questions completed`;
 
-  const container = document.getElementById("questionList");
-  container.innerHTML = "";
+    const container = document.getElementById("questionList");
+    container.innerHTML = "";
 
-  questions.forEach((q, idx) => {
-    const card = document.createElement("div");
-    card.className = `card vt-card mb-3 ${q.completed ? "vt-card-done" : ""}`;
-    card.id = `qcard-${q.questionId}`;
+    questions.forEach((q, idx) => {
+      const card = document.createElement("div");
+      card.className = `card vt-card mb-3 ${q.completed ? "vt-card-done" : ""}`;
+      card.id = `qcard-${q.questionId}`;
 
-    const hintsHtml = q.hints.map((h, hi) => `
+      const hintsHtml = q.hints.map((h, hi) => `
       <div class="vt-hint d-none" id="hint-${q.questionId}-${hi}">
         <i class="bi bi-lightbulb-fill text-warning me-1"></i>
         <em>${escHtml(h.hint)}</em>
       </div>`).join("");
 
-    card.innerHTML = `
+      card.innerHTML = `
       <div class="card-body">
         <div class="d-flex align-items-center mb-2">
           <span class="badge bg-secondary me-2">Q${q.questionNumber}</span>
@@ -94,49 +104,49 @@ function renderQuestions() {
         </div>` : ""}
       </div>`;
 
-    container.appendChild(card);
-  });
-}
-
-// Track how many hints have been shown per question
-const hintCounters = {};
-
-function revealHint(questionId, totalHints) {
-  if (!(questionId in hintCounters)) hintCounters[questionId] = 0;
-  const idx = hintCounters[questionId];
-  const hintEl = document.getElementById(`hint-${questionId}-${idx}`);
-  if (hintEl) hintEl.classList.remove("d-none");
-  hintCounters[questionId]++;
-  if (hintCounters[questionId] >= totalHints) {
-    document.getElementById(`hintBtn-${questionId}`).disabled = true;
-    document.getElementById(`hintBtn-${questionId}`).textContent = "All hints shown";
+      container.appendChild(card);
+    });
   }
-}
 
-async function submitAnswer(questionId) {
-  const input = document.getElementById(`ans-${questionId}`);
-  const answer = input.value.trim();
-  if (!answer) return;
+  // Track how many hints have been shown per question
+  const hintCounters = {};
 
-  const resultDiv = document.getElementById(`result-${questionId}`);
-
-  const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/questions/${questionId}`, {
-    method: "POST",
-    body: JSON.stringify({ answer }),
-  });
-
-  const body = await res.json();
-  if (body.correct) {
-    resultDiv.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
-    // Mark as complete and re-render
-    const q = questions.find(q => q.questionId === questionId);
-    if (q) q.completed = true;
-    setTimeout(() => renderQuestions(), 800);
-  } else {
-    resultDiv.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
+  function revealHint(questionId, totalHints) {
+    if (!(questionId in hintCounters)) hintCounters[questionId] = 0;
+    const idx = hintCounters[questionId];
+    const hintEl = document.getElementById(`hint-${questionId}-${idx}`);
+    if (hintEl) hintEl.classList.remove("d-none");
+    hintCounters[questionId]++;
+    if (hintCounters[questionId] >= totalHints) {
+      document.getElementById(`hintBtn-${questionId}`).disabled = true;
+      document.getElementById(`hintBtn-${questionId}`).textContent = "All hints shown";
+    }
   }
-}
 
-loadQuestions();
+  async function submitAnswer(questionId) {
+    const input = document.getElementById(`ans-${questionId}`);
+    const answer = input.value.trim();
+    if (!answer) return;
+
+    const resultDiv = document.getElementById(`result-${questionId}`);
+
+    const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/questions/${questionId}`, {
+      method: "POST",
+      body: JSON.stringify({ answer }),
+    });
+
+    const body = await res.json();
+    if (body.correct) {
+      resultDiv.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
+      // Mark as complete and re-render
+      const q = questions.find(q => q.questionId === questionId);
+      if (q) q.completed = true;
+      setTimeout(() => renderQuestions(), 800);
+    } else {
+      resultDiv.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
+    }
+  }
+
+  loadQuestions();
 </script>
 {% endblock %}
