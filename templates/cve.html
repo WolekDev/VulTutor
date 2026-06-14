@@ -1,47 +1,69 @@
-{% extends "base.html" %}
-{% block title %}CVE Details - VulTutor{% endblock %}
-
-{% block content %}
-<div id="loadingState" class="text-center py-5">
-  <div class="spinner-border text-warning" role="status"></div>
-  <p class="mt-2 text-muted">Loading CVE data…</p>
-</div>
-
-<div id="cveContent" class="d-none">
-  <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/home" class="vt-link">Dashboard</a></li>
-      <li class="breadcrumb-item active font-monospace" id="cveCrumb"></li>
-    </ol>
-  </nav>
-
-  <div class="card vt-card mb-4">
-    <div class="card-header d-flex align-items-center gap-2">
-      <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-      <span class="font-monospace fw-bold" id="cveTitle"></span>
-    </div>
-    <div class="card-body">
-      <h5 class="card-title">Description</h5>
-      <p id="cveDesc" class="vt-description"></p>
-
-      <h5 class="mt-4 card-title">Related Vulnerability Modules</h5>
-      <div id="relatedVulns">
-        <p class="text-muted">None linked.</p>
-      </div>
-    </div>
-  </div>
-
-  <a href="/home" class="btn btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
-  </a>
-</div>
-{% endblock %}
-
 {% block scripts %}
 <script>
-(async () => {
-  requireAuth();
-  const cveId = {{ cve_id | tojson }};
+  // Helper function to safely escape HTML, linkify URLs, and convert tab-indented lines into code blocks
+  function processCveDescription(text) {
+    if (!text) return "";
+
+    // 1. Break the description into individual lines
+    const lines = text.split("\n");
+    let processedLines = [];
+    let inCodeBlock = false;
+    let currentCodeLines = [];
+
+    lines.forEach(line => {
+      // Check if the line starts with a tab character (\t)
+      if (line.startsWith("\t")) {
+        inCodeBlock = true;
+        // Strip the leading tab and keep the remaining code string
+        currentCodeLines.push(line.substring(1));
+      } else {
+        // If we were tracking a tabbed code block and hit a normal text line, flush the code block first
+        if (inCodeBlock) {
+          processedLines.push(renderCodeBlock(currentCodeLines.join("\n")));
+          currentCodeLines = [];
+          inCodeBlock = false;
+        }
+        // Process a standard description line (escape HTML elements and parse implicit links)
+        processedLines.push(linkifyText(escapeHtml(line)));
+      }
+    });
+
+    // Flush any remaining active code blocks at the very end of the string stream
+    if (inCodeBlock) {
+      processedLines.push(renderCodeBlock(currentCodeLines.join("\n")));
+    }
+
+    return processedLines.join("\n");
+  }
+
+  // Sub-helper: Escapes structural HTML tags to eliminate XSS surface area
+  function escapeHtml(string) {
+    return string
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // Sub-helper: Automatically wraps plain text URLs inside clean web link anchors
+  function linkifyText(escapedText) {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return escapedText.replace(urlRegex, function (url) {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="vt-link text-break">${url}</a>`;
+    });
+  }
+
+  // Sub-helper: Renders code snippets into clean dark blocks matching developer terminals
+  function renderCodeBlock(codeText) {
+    // Uses a clean layout targeting your platform specifications
+    return `<pre class="bg-dark border border-secondary text-success p-3 rounded my-3 font-monospace" style="font-size: 0.9rem; white-space: pre; overflow-x: auto;"><code>${escapeHtml(codeText)}</code></pre>`;
+  }
+
+  (async () => {
+    requireAuth();
+    const cveId = {{ cve_id | tojson
+  }};
 
   const res = await apiFetch(`/api/cve/${encodeURIComponent(cveId)}`);
   if (!res.ok) {
@@ -54,7 +76,9 @@
 
   document.getElementById("cveCrumb").textContent = data.cveId;
   document.getElementById("cveTitle").textContent = data.cveId;
-  document.getElementById("cveDesc").textContent = data.description;
+
+  // Apply our corrected tab-aware formatting processor
+  document.getElementById("cveDesc").innerHTML = processCveDescription(data.description);
 
   const relDiv = document.getElementById("relatedVulns");
   if (data.relatedVulnerabilities && data.relatedVulnerabilities.length > 0) {
@@ -66,6 +90,6 @@
 
   document.getElementById("loadingState").classList.add("d-none");
   document.getElementById("cveContent").classList.remove("d-none");
-})();
+}) ();
 </script>
 {% endblock %}

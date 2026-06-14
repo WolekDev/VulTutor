@@ -91,20 +91,37 @@ def submit_answer(vulnId, questionId):
     except ValidationError as exc:
         return jsonify({"code": 400, "message": exc.messages}), 400
 
-    vuln = db.session.get(Vulnerability, vulnId)
-    if not vuln:
-        return jsonify({"code": 404, "message": "Vulnerability not found"}), 404
-
-    question = Question.query.filter_by(questionId=questionId, vulnId=vulnId).first()
-    if not question:
+    question = db.session.get(Question, questionId)
+    if not question or question.vulnId != vulnId:
         return jsonify({"code": 404, "message": "Question not found"}), 404
 
-    correct = data["answer"].strip().lower() == question.answer.strip().lower()
+    # --- DYNAMIC MULTI-ANSWER MATCHING LOGIC ---
+    user_ans = data["answer"].strip().lower()
+    
+    # Split the expected answers string by the pipe symbol '|'
+    allowed_answers = [ans.strip().lower() for ans in question.answer.split("|")]
+
+    correct = False
+    for expected in allowed_answers:
+        if user_ans == expected:
+            correct = True
+            break
+        # Automatically catch function invocations (e.g., if expected is 'gets' and user types 'gets()')
+        if "(" in user_ans and user_ans.split("(")[0].strip() == expected:
+            correct = True
+            break
 
     if correct:
-        if not CompletedQuestion.query.filter_by(userId=user_id, questionId=questionId).first():
-            db.session.add(CompletedQuestion(userId=user_id, questionId=questionId))
+        # Check if user already solved it to prevent duplicate tracking overhead
+        already_completed = CompletedQuestion.query.filter_by(
+            userId=user_id, questionId=questionId
+        ).first()
+
+        if not already_completed:
+            cq = CompletedQuestion(userId=user_id, questionId=questionId)
+            db.session.add(cq)
             db.session.commit()
+
         return jsonify({"correct": True, "message": "Correct answer!"}), 200
 
     return jsonify({"correct": False, "message": "Incorrect answer. Try again!"}), 200

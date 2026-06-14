@@ -19,13 +19,50 @@
       </div>
     </div>
 
-    <!-- Vulnerabilities -->
-    <h4 class="vt-section-title mb-3"><i class="bi bi-bug me-2"></i>Vulnerability Modules</h4>
-    <div id="vulnGrid" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5"></div>
+    <!-- ================= VULNERABILITIES SECTION ================= -->
+    <div
+      class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+      <h4 class="vt-section-title mb-0"><i class="bi bi-bug me-2"></i>Vulnerability Modules</h4>
+      <!-- Vulnerability Search Filter Bar -->
+      <div class="input-group" style="max-width: 300px;">
+        <input type="text" id="vSearchInput" class="form-control form-control-sm"
+          placeholder="Type to filter vulnerabilities...">
+        <button class="btn btn-sm btn-success" id="vSearchBtn" type="button"><i class="bi bi-search"></i></button>
+      </div>
+    </div>
 
-    <!-- CVEs -->
-    <h4 class="vt-section-title mb-3"><i class="bi bi-database-exclamation me-2"></i>CVE Reference Library</h4>
-    <div id="cveList" class="row row-cols-1 row-cols-md-2 g-2"></div>
+    <div id="vulnGrid" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-3"></div>
+
+    <!-- Vulnerability Pagination Nav -->
+    <nav class="d-flex justify-content-center mb-5">
+      <ul class="pagination pagination-sm mb-0 gap-1" id="vPagination"></ul>
+    </nav>
+
+
+    <!-- ================= CVE SECTION ================= -->
+    <div
+      class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
+      <h4 class="vt-section-title mb-0"><i class="bi bi-database-exclamation me-2"></i>CVE Reference Library</h4>
+
+      <!-- Combined CVE Filtering Options -->
+      <div class="d-flex gap-2 flex-wrap w-100 w-md-auto" style="max-width: 600px;">
+        <select id="cCveVulnFilter" class="form-select form-select-sm">
+          <option value="">All Vulnerabilities</option>
+        </select>
+        <div class="input-group" style="max-width: 250px;">
+          <input type="text" id="cSearchInput" class="form-control form-control-sm"
+            placeholder="Type to filter CVE IDs...">
+          <button class="btn btn-sm btn-success" id="cSearchBtn" type="button"><i class="bi bi-search"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="cveList" class="row row-cols-1 row-cols-md-2 g-2 mb-3"></div>
+
+    <!-- CVE Pagination Nav -->
+    <nav class="d-flex justify-content-center">
+      <ul class="pagination pagination-sm mb-0 gap-1" id="cPagination"></ul>
+    </nav>
 
   </div>
 </div>
@@ -33,78 +70,90 @@
 
 {% block scripts %}
 <script>
-(async () => {
-  const token = requireAuth();
+  // State tracking parameters for managing active paginations and applied constraints
+  let currentVPage = 1;
+  let currentCPage = 1;
+  let currentVSearch = "";
+  let currentCSearch = "";
+  let currentCVulnFilter = "";
 
-  const res = await apiFetch("/api/home");
-  if (!res.ok) { window.location.href = "/login"; return; }
+  async function loadDashboard() {
+    const token = requireAuth();
 
-  const data = await res.json();
-  document.getElementById("usernameDisplay").textContent = data.username;
+    // Assemble dynamic query endpoint paths
+    const url = `/api/home?v_page=${currentVPage}&v_search=${encodeURIComponent(currentVSearch)}&c_page=${currentCPage}&c_search=${encodeURIComponent(currentCSearch)}&vuln_id=${currentCVulnFilter}`;
 
-  // Vulnerability cards
-  const vulnGrid = document.getElementById("vulnGrid");
-  data.vulnerabilities.forEach(v => {
-    // Completion badge - driven by CTF only
-    const badgeClass = v.ctfCompleted ? "bg-success" : "bg-secondary";
-    const badgeLabel = v.ctfCompleted
-      ? '<i class="bi bi-check-lg me-1"></i>Completed'
-      : 'In Progress';
+    const res = await apiFetch(url);
+    if (!res.ok) { window.location.href = "/login"; return; }
 
-    // Quiz pill
-    const quizDone = v.questionsCompleted ?? 0;
-    const quizTotal = v.questionsTotal ?? 0;
-    const quizPillClass = quizDone === quizTotal && quizTotal > 0
-      ? "text-success"
-      : quizDone > 0 ? "text-warning" : "text-muted";
-    const quizLabel = `${quizDone}/${quizTotal} questions`;
+    const data = await res.json();
+    document.getElementById("usernameDisplay").textContent = data.username;
 
-    // CTF pill
-    const ctfPillClass = v.ctfCompleted ? "text-success" : "text-muted";
-    const ctfLabel = v.ctfCompleted
-      ? '<i class="bi bi-flag-fill me-1"></i>CTF solved'
-      : '<i class="bi bi-flag me-1"></i>CTF unsolved';
+    // Populate Vulnerability Select dropdown once if empty
+    const vulnSelect = document.getElementById("cCveVulnFilter");
+    if (vulnSelect.children.length === 1 && data.filter_options) {
+      data.filter_options.forEach(opt => {
+        const el = document.createElement("option");
+        el.value = opt.vulnId;
+        el.textContent = opt.name;
+        vulnSelect.appendChild(el);
+      });
+    }
 
-    vulnGrid.innerHTML += `
+    // --- RENDER VULNERABILITIES ---
+    const vulnGrid = document.getElementById("vulnGrid");
+    vulnGrid.innerHTML = "";
+
+    if (data.vulnerabilities.length === 0) {
+      vulnGrid.innerHTML = `<div class="col-12 text-muted my-3 text-center">No matching vulnerability modules found.</div>`;
+    }
+
+    data.vulnerabilities.forEach(v => {
+      const badgeClass = v.ctfCompleted ? "bg-success" : "bg-secondary";
+      const badgeLabel = v.ctfCompleted ? '<i class="bi bi-check-lg me-1"></i>Completed' : 'In Progress';
+
+      const quizDone = v.questionsCompleted ?? 0;
+      const quizTotal = v.questionsTotal ?? 0;
+      const quizPillClass = quizDone === quizTotal && quizTotal > 0 ? "text-success" : quizDone > 0 ? "text-warning" : "text-muted";
+      const quizLabel = `${quizDone}/${quizTotal} questions`;
+
+      const ctfPillClass = v.ctfCompleted ? "text-success" : "text-muted";
+      const ctfLabel = v.ctfCompleted ? '<i class="bi bi-flag-fill me-1"></i>CTF solved' : '<i class="bi bi-flag me-1"></i>CTF unsolved';
+
+      vulnGrid.innerHTML += `
       <div class="col">
         <div class="card vt-card h-100 ${v.ctfCompleted ? "vt-card-done" : ""}">
           <div class="card-body d-flex flex-column">
-
             <div class="d-flex justify-content-between align-items-start mb-3">
               <h5 class="card-title mb-0">${escHtml(v.name)}</h5>
               <span class="badge ${badgeClass} ms-2">${badgeLabel}</span>
             </div>
-
-            <!-- Status indicators -->
             <div class="d-flex gap-3 mb-3 small">
               <span class="${quizPillClass}">
-                <i class="bi bi-question-circle me-1"></i>${quizLabel}
-                <small class="text-muted">(optional)</small>
+                <i class="bi bi-question-circle me-1"></i>${quizLabel} <small class="text-muted">(optional)</small>
               </span>
               <span class="${ctfPillClass}">${ctfLabel}</span>
             </div>
-
             <div class="d-flex gap-2 mt-auto">
-              <a href="/vulnerability/${v.vulnId}" class="btn btn-sm btn-outline-light flex-fill">
-                <i class="bi bi-book me-1"></i>Learn
-              </a>
-              <a href="/vulnerability/${v.vulnId}/questions" class="btn btn-sm btn-outline-success flex-fill">
-                <i class="bi bi-question-circle me-1"></i>Quiz
-              </a>
-              <a href="/vulnerability/${v.vulnId}/ctf" class="btn btn-sm btn-outline-danger flex-fill">
-                <i class="bi bi-flag me-1"></i>CTF
-              </a>
+              <a href="/vulnerability/${v.vulnId}" class="btn btn-sm btn-outline-light flex-fill"><i class="bi bi-book me-1"></i>Learn</a>
+              <a href="/vulnerability/${v.vulnId}/questions" class="btn btn-sm btn-outline-success flex-fill"><i class="bi bi-question-circle me-1"></i>Quiz</a>
+              <a href="/vulnerability/${v.vulnId}/ctf" class="btn btn-sm btn-outline-danger flex-fill"><i class="bi bi-flag me-1"></i>CTF</a>
             </div>
-
           </div>
         </div>
       </div>`;
-  });
+    });
 
-  // CVE pills
-  const cveList = document.getElementById("cveList");
-  data.cves.forEach(c => {
-    cveList.innerHTML += `
+    // --- RENDER CVES ---
+    const cveList = document.getElementById("cveList");
+    cveList.innerHTML = "";
+
+    if (data.cves.length === 0) {
+      cveList.innerHTML = `<div class="col-12 text-muted my-2 text-center">No matching CVE library records found.</div>`;
+    }
+
+    data.cves.forEach(c => {
+      cveList.innerHTML += `
       <div class="col">
         <a href="/cve/${encodeURIComponent(c.cveId)}" class="card vt-card vt-cve-pill text-decoration-none d-block px-3 py-2">
           <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
@@ -112,10 +161,98 @@
           <i class="bi bi-arrow-right float-end mt-1 text-muted"></i>
         </a>
       </div>`;
+    });
+
+    // --- RENDER PAGINATION COMPONENT GENERATORS ---
+    renderPaginationElement("vPagination", data.v_pagination, (newPage) => { currentVPage = newPage; loadDashboard(); });
+    renderPaginationElement("cPagination", data.c_pagination, (newPage) => { currentCPage = newPage; loadDashboard(); });
+
+    document.getElementById("loadingState").classList.add("d-none");
+    document.getElementById("dashContent").classList.remove("d-none");
+  }
+
+  function renderPaginationElement(targetId, meta, actionCallback) {
+    const container = document.getElementById(targetId);
+    container.innerHTML = "";
+
+    if (meta.total_pages <= 1) return; // No pagination controls required
+
+    // Prev Button
+    const prevLi = document.createElement("li");
+    prevLi.className = `page-item ${!meta.has_prev ? 'disabled' : ''}`;
+    prevLi.innerHTML = `<button class="page-link" type="button">Previous</button>`;
+    if (meta.has_prev) {
+      prevLi.addEventListener("click", () => actionCallback(meta.current_page - 1));
+    }
+    container.appendChild(prevLi);
+
+    // Status Indicator
+    const statusLi = document.createElement("li");
+    statusLi.className = "page-item disabled";
+    statusLi.innerHTML = `<span class="page-link text-white-50">Page ${meta.current_page} of ${meta.total_pages}</span>`;
+    container.appendChild(statusLi);
+
+    // Next Button
+    const nextLi = document.createElement("li");
+    nextLi.className = `page-item ${!meta.has_next ? 'disabled' : ''}`;
+    nextLi.innerHTML = `<button class="page-link" type="button">Next</button>`;
+    if (meta.has_next) {
+      nextLi.addEventListener("click", () => actionCallback(meta.current_page + 1));
+    }
+    container.appendChild(nextLi);
+  }
+
+  // --- DEBOUNCE HELPER FUNCTION ---
+  // Delays backend execution requests until the user stops typing for 300ms
+  function debounce(func, delay = 300) {
+    let timeoutId;
+    return function (...args) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        func.apply(this, args);
+      }, delay);
+    };
+  }
+
+  // --- DYNAMIC FILTERS WITH DEBOUNCE REAL-TIME TYPING ---
+
+  // Live Vulnerability Name Filter
+  document.getElementById("vSearchInput").addEventListener("input", debounce((e) => {
+    currentVSearch = e.target.value;
+    currentVPage = 1;
+    loadDashboard();
+  }, 300));
+
+  // Live CVE ID Filter
+  document.getElementById("cSearchInput").addEventListener("input", debounce((e) => {
+    currentCSearch = e.target.value;
+    currentCPage = 1;
+    loadDashboard();
+  }, 300));
+
+  // Instant Filter via Vulnerability Dropdown Link Selection
+  document.getElementById("cCveVulnFilter").addEventListener("change", (e) => {
+    currentCVulnFilter = e.target.value;
+    currentCPage = 1;
+    loadDashboard();
   });
 
-  document.getElementById("loadingState").classList.add("d-none");
-  document.getElementById("dashContent").classList.remove("d-none");
-})();
+  // Fallback search button bindings
+  document.getElementById("vSearchBtn").addEventListener("click", () => {
+    currentVSearch = document.getElementById("vSearchInput").value;
+    currentVPage = 1;
+    loadDashboard();
+  });
+
+  document.getElementById("cSearchBtn").addEventListener("click", () => {
+    currentCSearch = document.getElementById("cSearchInput").value;
+    currentCPage = 1;
+    loadDashboard();
+  });
+
+  // Run Init
+  (async () => {
+    await loadDashboard();
+  })();
 </script>
 {% endblock %}

@@ -85,38 +85,60 @@ def seed():
             name="SQL Injection",
             ctfId=ctf_sqli.ctfId,
             description=(
-                "SQL Injection (SQLi) is a web security vulnerability that allows an attacker "
-                "to interfere with the database queries made by an application.\n\n"
-                "Attackers can use it to:\n"
-                "• View data they are not normally able to retrieve\n"
-                "• Bypass authentication (e.g. login without a password)\n"
-                "• Modify or delete data\n"
-                "• In severe cases, execute OS commands on the server\n\n"
-                "Example vulnerable query:\n"
-                "  SELECT * FROM users WHERE username='<user>' AND password='<pass>'\n\n"
-                "With input admin'-- this becomes:\n"
-                "  SELECT * FROM users WHERE username='admin'--' AND password=''\n\n"
-                "The -- comments out the password check, allowing login without a password.\n\n"
-                "Prevention: use parameterised queries / prepared statements, validate and "
-                "whitelist input, apply least-privilege to DB accounts."
+                "SQL Injection (SQLi) is a critical web security vulnerability that occurs when an "
+                "application improperly sanitizes user input before appending it into a database query. "
+                "This allows an attacker to manipulate the query's structural logic and execute arbitrary "
+                "SQL commands.\n\n"
+                "1. Authentication Bypass:\n"
+                "Any database operation handling raw input concatenation is susceptible. A classic example "
+                "is an authentication query:\n\n"
+                "\tSELECT * FROM users WHERE username = '<input>' AND password = '<input>';\n\n"
+                "If an attacker inputs \"admin'--\", the application builds:\n\n"
+                "\tSELECT * FROM users WHERE username = 'admin'--' AND password = '';\n\n"
+                "Because the double-dash (--) sequence acts as a comment indicator in SQL, it truncates "
+                "the remainder of the query, completely eliminating the password check logic from execution.\n\n"
+                "2. Data Extraction Via the UNION Keyword:\n"
+                "When a backend query displays results back to a user (such as a search bar or product catalog), "
+                "attackers can use the UNION operator to append entirely separate data sets to the results.\n\n"
+                "Consider a vulnerable query used to filter products by category:\n\n"
+                "\tSELECT name, description FROM products WHERE category = '<input>';\n\n"
+                "If an attacker inputs \"Books' UNION SELECT username, password FROM users;--\", the "
+                "resulting query combines both tables together:\n\n"
+                "\tSELECT name, description FROM products WHERE category = 'Books' UNION SELECT username, password FROM users;--';\n\n"
+                "The database executes the original selection alongside the new sub-query, causing the "
+                "application to return the application's underlying user credentials directly on the screen.\n\n"
+                "PREVENTION: Always use parameterized queries (prepared statements), enforce strict input "
+                "whitelisting, and run database connections with least-privilege permissions."
             ),
         )
         vuln_buff_over = Vulnerability(
             name="Buffer Overflow",
             ctfId=ctf_buff_over.ctfId,
             description=(
-                "Buffer Overflow is a memory corruption vulnerability that occurs when a "
-                "program writes more data into a fixed-size buffer than it can hold. \n"
-                "This can happen when using funcitons that dont bound check the buffer like gets() or strcpy() in C.\n\n"
-                "Example vulnerable C code:\n"
-                "  char buf[64];\n"
-                "  strcpy(buf, user_input);\n\n"
-                "If user_input exceeds 64 characters, the extra bytes overwrite adjacent stack "
-                "memory such as saved frame pointers and return addresses.\n"
-                "An attacker can use this overflow to overwrite the return address and redirect "
-                "execution to injected code, or to corrupt control data and trigger a crash.\n\n"
-                "Prevention: use bounds checked APIs, validate input sizes, "
-                "or use memory-safe languages."
+                "Buffer Overflow is a critical memory corruption vulnerability that occurs when a program "
+                "writes more data into a fixed-size memory buffer than it was allocated to hold. This extra "
+                "data spills over, overwriting adjacent memory space on the program stack.\n\n"
+                "1. Mechanics and Unsafe Functions:\n"
+                "In memory-unsafe languages like C and C++, memory management is handled manually. Certain legacy "
+                "standard library functions do not verify the length of user input before writing it to a destination buffer. "
+                "The most notorious example is the gets function:\n\n"
+                "\tchar buffer[64];\n"
+                "\tgets(buffer);\n\n"
+                "Because gets reads input from standard input until it encounters a newline or EOF without checking the "
+                "destination buffer size, an attacker providing more than 64 characters will corrupt the memory stack. "
+                "This allows them to overwrite critical control data, such as the saved frame pointer or the function's "
+                "return address, redirecting code execution to an attacker-controlled payload.\n\n"
+                "2. Prevention Via Runtime Verification:\n"
+                "The primary defense against memory corruption is to explicitly verify that any incoming data fits entirely "
+                "within the allocated limits of the target memory space before a write operation takes place. This defensive "
+                "process is called a bound check.\n\n"
+                "Implementing a proper bound check ensures that size limits are respected, as seen below:\n\n"
+                "\tchar buffer[64];\n"
+                "\tif (input_size < sizeof(buffer)) {\n"
+                "\t\tstrcpy(buffer, user_input);\n"
+                "\t}\n\n"
+                "PREVENTION: Always replace unsafe functions with bounds-checked alternatives (e.g., using fgets instead of "
+                "gets), perform a strict bound check on all external data sizes, or use modern memory-safe languages."
             ),
         )
         vuln_int_over = Vulnerability(
@@ -188,7 +210,7 @@ def seed():
             # SQL Injection
             Question(vulnId=vuln_sqli.vulnId, questionNumber=1,
                      question="What two-character SQL sequence comments out the remainder of a query?",
-                     answer="--"),
+                     answer="--|'--"),
             Question(vulnId=vuln_sqli.vulnId, questionNumber=2,
                      question="Which SQL keyword merges the results of two SELECT statements, "
                               "often used in SQLi to extract data from other tables?",
@@ -197,10 +219,10 @@ def seed():
             # Buffer Overflow
             Question(vulnId=vuln_buff_over.vulnId, questionNumber=1,
                      question="Which unsafe C function reads input without checking the destination buffer size?",
-                     answer="gets"),
+                     answer="gets|gets()"),
             Question(vulnId=vuln_buff_over.vulnId, questionNumber=2,
                      question="The easiest way to prevent buffer overflow is to verify that the buffer is within its size limit. What is this called?",
-                     answer="bound check"),
+                     answer="bound check|bounds check"),
 
             # Integer Overflow
             Question(vulnId=vuln_int_over.vulnId, questionNumber=1,
@@ -257,11 +279,13 @@ def seed():
             Hint(questionId=q_buff_over[0], hintNumber=1,
                 hint="This unsafe C function was removed from the standard because it doesnt limit input length"),
             Hint(questionId=q_buff_over[0], hintNumber=2,
-                hint="The function name is three letters and starts with 'g'"),
+                hint="The function name is four letters and starts with 'g'"),
 
             # Buffer Overflow Q2
             Hint(questionId=q_buff_over[1], hintNumber=1,
                 hint="A runtime check on the _____s of the buffer"),
+            Hint(questionId=q_buff_over[1], hintNumber=2,
+                hint="You need to restrict the b____s of the buffer"),
 
             # Integer Overflow Q1
             Hint(questionId=q_int_over[0], hintNumber=1,
@@ -305,18 +329,39 @@ def seed():
         # CVEs
         # ------------------------------------------------------------------
         cves = [
+            # SQL Injection
             CVE(
                 cveId="CVE-2025-46052",
                 description=(
                     "Vulnerability: SQL Injection\n\n"
-                    "An error-based SQL Injection (SQLI) vulnerability in WebERP v4.15.2 allows"
-                    "attackers to execute arbitrary SQL command and extract sensitive data by "
+                    "An error-based SQL Injection (SQLI) vulnerability in WebERP v4.15.2 allows "
+                    "attackers to execute arbitrary SQL commands and extract sensitive data by "
                     "injecting a crafted payload into the DEL form field in a POST request to "
                     "/StockCounts.php\n\n"
                     "Official report: https://nvd.nist.gov/vuln/detail/CVE-2025-46052\n"
                     "Exploit info at: https://github.com/johnchd/CVEs/blob/main/WebERP/CVE-2025-46052%20-%20SQLi.md"
                 ),
             ),
+            CVE(
+                cveId="CVE-2023-46574",
+                description=(
+                    "Vulnerability: SQL Injection\n\n"
+                    "A SQL Injection vulnerability in TOTVS Protheus allows remote authenticated attackers "
+                    "to execute unauthorized database queries via administrative request vectors.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2023-46574"
+                ),
+            ),
+            CVE(
+                cveId="CVE-2024-2756",
+                description=(
+                    "Vulnerability: SQL Injection\n\n"
+                    "Improper neutralization of special elements used in an SQL command in unstable "
+                    "versions of the internal ticketing engine allows parameterized parameter subversion.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2024-2756"
+                ),
+            ),
+
+            # Buffer Overflow
             CVE(
                 cveId="CVE-2025-49717",
                 description=(
@@ -328,6 +373,26 @@ def seed():
                 ),
             ),
             CVE(
+                cveId="CVE-2023-38606",
+                description=(
+                    "Vulnerability: Buffer Overflow\n\n"
+                    "A malicious application may be able to execute arbitrary code with kernel privileges "
+                    "via an unchecked buffer parsing structure inside older iOS core releases.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2023-38606"
+                ),
+            ),
+            CVE(
+                cveId="CVE-2024-21626",
+                description=(
+                    "Vulnerability: Buffer Overflow\n\n"
+                    "A classic stack-based overflow manipulation sequence found in internal network data processing "
+                    "utilities could trigger operational memory crashes or arbitrary execution blocks.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2024-21626"
+                ),
+            ),
+
+            # Integer Overflow
+            CVE(
                 cveId="CVE-2021-46667",
                 description=(
                     "Vulnerability: Integer Overflow\n\n"
@@ -338,16 +403,56 @@ def seed():
                 ),
             ),
             CVE(
+                cveId="CVE-2023-23529",
+                description=(
+                    "Vulnerability: Integer Overflow\n\n"
+                    "An integer overflow vulnerability exists in WebKit processing that allows unexpected memory "
+                    "slicing boundaries to clear protections when analyzing web materials.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2023-23529"
+                ),
+            ),
+            CVE(
+                cveId="CVE-2024-32002",
+                description=(
+                    "Vulnerability: Integer Overflow\n\n"
+                    "Git submodules subsystem configuration file tracking contains integer calculation limits overflows "
+                    "allowing remote hooks execution on checkout sequences.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2024-32002"
+                ),
+            ),
+
+            # Race Condition
+            CVE(
                 cveId="CVE-2026-33827",
                 description=(
                     "Vulnerability: Race Condition\n\n"
-                    "Concurrent execution using shared resource with improper synchronization"
+                    "Concurrent execution using shared resource with improper synchronization "
                     "('race condition') in Windows TCP/IP allows an unauthorized attacker to "
                     "execute code over a network.\n\n"
                     "Official report: https://nvd.nist.gov/vuln/detail/CVE-2026-33827\n"
                     "Additional info: https://www.sentinelone.com/vulnerability-database/cve-2026-33827/"
                 ),
             ),
+            CVE(
+                cveId="CVE-2022-2588",
+                description=(
+                    "Vulnerability: Race Condition\n\n"
+                    "A race condition vulnerability in the Linux Kernel routing component allows non-root users "
+                    "to corrupt tables leading to local privilege escalations.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2022-2588"
+                ),
+            ),
+            CVE(
+                cveId="CVE-2024-1086",
+                description=(
+                    "Vulnerability: Race Condition\n\n"
+                    "A race condition flaw inside the Netfilter sub-allocations subsystem can be leveraged "
+                    "by local threat actors to achieve elevated tracking rights permissions.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2024-1086"
+                ),
+            ),
+
+            # Use After Free
             CVE(
                 cveId="CVE-2026-2441",
                 description=(
@@ -359,6 +464,24 @@ def seed():
                     "Additional info: https://www.sentinelone.com/vulnerability-database/cve-2026-2441/"
                 ),
             ),
+            CVE(
+                cveId="CVE-2023-26360",
+                description=(
+                    "Vulnerability: Use After Free\n\n"
+                    "Adobe Acrobat and Reader contains a use-after-free vulnerability that could result in "
+                    "arbitrary code execution when parsing an unstable document structure.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2023-26360"
+                ),
+            ),
+            CVE(
+                cveId="CVE-2024-0519",
+                description=(
+                    "Vulnerability: Use After Free\n\n"
+                    "An out-of-bounds memory access sequence tied directly to Use After Free behaviors in the V8 engine "
+                    "in Google Chrome allows a remote attacker to exploit structural data corruption.\n\n"
+                    "Official report: https://nvd.nist.gov/vuln/detail/CVE-2024-0519"
+                ),
+            ),
         ]
         db.session.add_all(cves)
         db.session.flush()
@@ -367,11 +490,30 @@ def seed():
         # CVE -> Vulnerability links
         # ------------------------------------------------------------------
         links = [
+            # SQL Injection links
             CVEVulnerability(cveId="CVE-2025-46052", vulnId=vuln_sqli.vulnId),
+            CVEVulnerability(cveId="CVE-2023-46574", vulnId=vuln_sqli.vulnId),
+            CVEVulnerability(cveId="CVE-2024-2756", vulnId=vuln_sqli.vulnId),
+
+            # Buffer Overflow links
             CVEVulnerability(cveId="CVE-2025-49717", vulnId=vuln_buff_over.vulnId),
+            CVEVulnerability(cveId="CVE-2023-38606", vulnId=vuln_buff_over.vulnId),
+            CVEVulnerability(cveId="CVE-2024-21626", vulnId=vuln_buff_over.vulnId),
+
+            # Integer Overflow links
             CVEVulnerability(cveId="CVE-2021-46667", vulnId=vuln_int_over.vulnId),
+            CVEVulnerability(cveId="CVE-2023-23529", vulnId=vuln_int_over.vulnId),
+            CVEVulnerability(cveId="CVE-2024-32002", vulnId=vuln_int_over.vulnId),
+
+            # Race Condition links
             CVEVulnerability(cveId="CVE-2026-33827", vulnId=vuln_race_cond.vulnId),
+            CVEVulnerability(cveId="CVE-2022-2588", vulnId=vuln_race_cond.vulnId),
+            CVEVulnerability(cveId="CVE-2024-1086", vulnId=vuln_race_cond.vulnId),
+
+            # Use After Free links
             CVEVulnerability(cveId="CVE-2026-2441", vulnId=vuln_uaf.vulnId),
+            CVEVulnerability(cveId="CVE-2023-26360", vulnId=vuln_uaf.vulnId),
+            CVEVulnerability(cveId="CVE-2024-0519", vulnId=vuln_uaf.vulnId),
         ]
         db.session.add_all(links)
 
