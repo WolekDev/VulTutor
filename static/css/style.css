@@ -1,22 +1,23 @@
-/* ============================================================
-   DARK STYLE
-   ============================================================ */
-
 :root {
   --vt-green: #39d353;
   --vt-green-dim: #238636;
+
+  /* Background / surface / borders / text */
   --vt-bg: #0d1117;
   --vt-surface: #161b22;
   --vt-border: #30363d;
   --vt-text: #e6edf3;
   --vt-muted: #8b949e;
+
+  /* Font family used across the app. Replace with your preferred web font */
+  --vt-font-family: "Consolas", "Monaco", "Liberation Mono", monospace;
 }
 
 /* Base */
 body {
   background-color: var(--vt-bg);
   color: var(--vt-text);
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: var(--vt-font-family);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -149,6 +150,16 @@ main {
 .vt-footer {
   background-color: var(--vt-surface);
   border-top: 1px solid var(--vt-border);
+}
+
+/* Make Bootstrap primary buttons match app accent color */
+.btn-primary {
+  background-color: var(--vt-green) !important;
+  border-color: var(--vt-green) !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: color-mix(in srgb, var(--vt-green) 85%, black 15%) !important;
+  border-color: color-mix(in srgb, var(--vt-green) 85%, black 15%) !important;
 }
 
 /* Form inputs in dark mode */

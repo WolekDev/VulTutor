@@ -8,26 +8,23 @@
 </div>
 
 <div id="quizContent" class="d-none">
-  <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/home" class="vt-link">Dashboard</a></li>
-      <li class="breadcrumb-item"><a href="#" class="vt-link" id="vulnLink"></a></li>
-      <li class="breadcrumb-item active">Quiz</li>
-    </ol>
-  </nav>
+  <!-- Breadcrumb removed (top nav present) -->
 
-  <h2 class="vt-heading mb-1"><i class="bi bi-question-circle me-2"></i>Quiz</h2>
+  <!-- Top navigation for vulnerability pages: Learn / Quiz / CTF -->
+  <div class="mb-3">
+    <div class="btn-group" role="group" aria-label="vuln-nav">
+      <a href="/vulnerability/{{ vuln_id }}" class="btn btn-outline-light">Learn</a>
+      <a href="/vulnerability/{{ vuln_id }}/questions" class="btn btn-primary">Quiz</a>
+      <a href="/vulnerability/{{ vuln_id }}/ctf" class="btn btn-outline-light">CTF</a>
+    </div>
+  </div>
   <p class="text-muted mb-4" id="progressText"></p>
 
   <div id="questionList"></div>
 
-  <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-    <a href="/vulnerability/{{ vuln_id }}" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i> Vulnerability Overview
-    </a>
-
-    <a href="/home" class="btn btn-link text-muted">
-      Back to Dashboard
+  <div class="mb-3">
+    <a href="/home" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
     </a>
   </div>
 </div>
@@ -53,14 +50,7 @@
   (async () => {
     requireAuth();
 
-    // 1. Fetch Vulnerability Name for Breadcrumb
-    const vRes = await apiFetch(`/api/vulnerabilities/${VULN_ID}/description`);
-    if (vRes.ok) {
-      const vData = await vRes.json();
-      const link = document.getElementById("vulnLink");
-      link.textContent = vData.name;
-      link.href = `/vulnerability/${VULN_ID}`;
-    }
+    // Vulnerability name is not shown in a breadcrumb anymore; skip setting breadcrumb link
 
     // 2. Fetch Questions
     const res = await apiFetch(`/api/vulnerabilities/${VULN_ID}/questions`);
@@ -83,7 +73,7 @@
     const total = questions.length;
     const completed = questions.filter(q => q.completed).length;
     document.getElementById("progressText").textContent =
-      `You have completed ${completed} out of ${total} core questions.`;
+      `Completed: ${completed} / ${total}`;
   }
 
   function renderQuestions() {

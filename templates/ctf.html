@@ -8,13 +8,16 @@
 </div>
 
 <div id="ctfContent" class="d-none">
-  <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="/home" class="vt-link">Dashboard</a></li>
-      <li class="breadcrumb-item"><a href="#" class="vt-link" id="vulnLink"></a></li>
-      <li class="breadcrumb-item active">CTF Challenge</li>
-    </ol>
-  </nav>
+  <!-- Breadcrumb removed (top nav present) -->
+
+  <!-- Top navigation for vulnerability pages: Learn / Quiz / CTF -->
+  <div class="mb-3">
+    <div class="btn-group" role="group" aria-label="vuln-nav">
+      <a href="/vulnerability/{{ vuln_id }}" class="btn btn-outline-light">Learn</a>
+      <a href="/vulnerability/{{ vuln_id }}/questions" class="btn btn-outline-light">Quiz</a>
+      <a href="/vulnerability/{{ vuln_id }}/ctf" class="btn btn-primary">CTF</a>
+    </div>
+  </div>
 
   <div class="card vt-card border-danger mb-4" id="ctfCard">
     <div class="card-header bg-danger bg-opacity-25 d-flex align-items-center justify-content-between">
@@ -45,7 +48,7 @@
 
       <div id="solvedBanner" class="alert alert-success d-none mt-3">
         <i class="bi bi-trophy-fill me-2"></i>
-        <strong>Challenge Solved!</strong> You successfully completed this CTF.
+        You got it!
       </div>
     </div>
   </div>
@@ -72,16 +75,17 @@
     const data = await res.json();
     ctfId = data.ctfId;
 
-    document.getElementById("vulnLink").textContent = data.vulnName;
-    document.getElementById("vulnLink").href = `/vulnerability/${VULN_ID}`;
+    // Breadcrumb link removed; top nav contains links already
     document.getElementById("ctfDesc").textContent = data.description;
     document.getElementById("ctfDownload").href = data.path;
 
     if (data.completed) {
       document.getElementById("ctfBadge").textContent = "✓ Solved";
       document.getElementById("ctfBadge").className = "badge bg-success";
-      document.getElementById("flagSection").classList.add("d-none");
+      // Keep the flag input visible so the user can retry submissions
       document.getElementById("solvedBanner").classList.remove("d-none");
+      const submitBtn = document.getElementById("submitFlagBtn");
+      if (submitBtn) submitBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise me-1"></i>Retry';
     }
 
     document.getElementById("loadingState").classList.add("d-none");
@@ -108,7 +112,9 @@
       document.getElementById("ctfBadge").textContent = "✓ Solved";
       document.getElementById("ctfBadge").className = "badge bg-success";
       document.getElementById("solvedBanner").classList.remove("d-none");
-      document.getElementById("flagSection").classList.add("d-none");
+      // Keep the flag input visible to allow retries, but update the button to indicate retry
+      const submitBtn = document.getElementById("submitFlagBtn");
+      if (submitBtn) submitBtn.innerHTML = '<i class="bi bi-arrow-counterclockwise me-1"></i>Retry';
     } else {
       resultDiv.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>${escHtml(body.message)}</span>`;
     }
