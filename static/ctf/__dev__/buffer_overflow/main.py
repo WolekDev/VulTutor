@@ -51,7 +51,7 @@ def main():
         global user_id
         global products
         if user_id == 0:
-            messagebox.showinfo("ADMIN", f"User ID: {user_id}\nOpening ADMIN DASHBOARD ...\nFlag: admin_dashboard_access")
+            messagebox.showinfo("ADMIN", f"User ID: {user_id}\nOpening ADMIN DASHBOARD ...\nFlag: admin_dashboard_secret")
         else:
             messagebox.showinfo("Payment", f"User ID: {user_id}\nPayment amount: {sum([i[1] for i in products])} zl\nPayment successful!")
         products = []
