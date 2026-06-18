@@ -78,10 +78,13 @@ def seed():
         )
         ctf_uaf = CTF(
             description=(
-                "NOT IMPLEMENTED\n"
+                "Your colleague was using a note taking app and you think he has a secret to hide.\n"
+                "He sees you eyeing him but he gets called up to the boss and quickly deletes the note.\n\n"
+                "Your task to find the secret message.\n"
+                "You know he is a terrible programmer and maybe he implemented something wrong.\n"
             ),
             path="/static/ctf/use_after_free.zip",
-            flag="flag",
+            flag="u53_4ft3r_fr33_m3m0ry_l34k",
         )
         db.session.add_all([ctf_sqli, ctf_buff_over, ctf_int_over, ctf_race_cond, ctf_uaf])
         db.session.flush()
@@ -153,59 +156,75 @@ def seed():
             name="Integer Overflow",
             ctfId=ctf_int_over.ctfId,
             description=(
-                "Integer Overflow happens when an arithmetic operation produces a result that is "
-                "too large for the variable's storage type.\n\n"
-                "Example vulnerable C code:\n"
-                "  uint8_t count = 0;\n"
-                "  scanf(\"%zu\", &count);\n\n"
-                "If the input is bugger than 255, count is wrap around and size becomes "
-                "much smaller than expected. The program then allocates a buffer that is too "
-                "small and a later write of count items overflows it.\n"
-                "Unsigned overflow wraps around in C, while signed overflow is undefined behavior. "
-                "Attackers can use this to bypass bounds checking and trigger memory corruption.\n\n"
-                "Prevention: validate operands before arithmetic, use checked integer operations, "
-                "and reject values that would overflow size calculations."
+                "Integer Overflow occurs when an arithmetic operation produces a numerical value "
+                "that is too large for the allocated variable's storage type, exceeding the maximum "
+                "representable limit of that data type. This causes the value to wrap around to a "
+                "much smaller or negative number, which can be leveraged to bypass security validation checks.\n\n"
+                "Mechanics and Wrap-Around Behavior:\n"
+                "Computer systems use fixed-width binary configurations to store integers in memory. When a "
+                "value exceeds the maximum upper limit of its type, an overflow occurs. For example, an unsigned "
+                "8-bit integer (uint8_t) can only store a strict numerical range from 0 to 255. Because 255 is the "
+                "absolute maximum capacity, providing any value after 255 forces the variable to overflow and wrap "
+                "around back to 0.\n\n"
+                "Consider the following vulnerable code snippet:\n\n"
+                "\tuint8_t count = 0;\n"
+                "\tscanf(\"%zu\", &count);\n\n"
+                "Because the system performs no safety validation on the input, entering a value larger than 255 "
+                "triggers an arithmetic overflow, causing the program to handle an completely incorrect size tracking value.\n\n"
+                "PREVENTION: Always validate operands and inputs before executing arithmetic, utilize built-in safe "
+                "integer primitives or checked library options, and strictly reject values outside expected numeric boundaries."
             ),
         )
         vuln_race_cond = Vulnerability(
             name="Race Condition",
             ctfId=ctf_race_cond.ctfId,
             description=(
-                "A Race Condition occurs when multiple threads or processes access shared state "
-                "without proper synchronization, so the result can depend on timing.\n\n"
-                "The most common type is called TOCTOU (Time Of Check Time of Use).\n"
-                "Example TOCTOU bug:\n"
-                "  if (!file_exists(path)) {\n"
-                "      create_file(path);\n"
-                "  }\n\n"
-                "If another thread or attacker changes the file between the existence check and the "
-                "create operation, the program can behave incorrectly or create the wrong file.\n"
-                "Another example is checking permissions on a resource and then using it later:\n"
-                "  if (has_access(user, file)) open(file);\n"
-                "An attacker can swap the file during the window and bypass authorization.\n"
-                "Race conditions can lead to privilege escalation, data corruption, or security checks "
-                "being bypassed.\n\n"
-                "Prevention: use locks or atomic operations around shared resources, "
-                "and keep critical sections small and protected."
+                "A Race Condition occurs when a system's substantive behavior is dependent on the "
+                "sequence or timing of uncontrollable events, such as multiple threads or processes "
+                "accessing a shared resource concurrently without proper synchronization. This allows "
+                "an attacker to manipulate precise timing windows to subvert application logic.\n\n"
+                "1. Time-of-Check to Time-of-Use (TOCTOU):\n"
+                "The most notorious variant of a race condition is TOCTOU, which involves a distinct window of "
+                "vulnerability between when a resource condition is evaluated and when the resulting action is "
+                "actually performed. Consider a basic file creation check:\n\n"
+                "\tif (!file_exists(path)) {\n"
+                "\t\tcreate_file(path);\n"
+                "\t}\n\n"
+                "If an attacker can swap or modify the underlying file during the tiny temporal window between "
+                "the file_exists check and the create_file execution, the program will perform actions on the "
+                "wrong resource, bypassing access controls entirely.\n\n"
+                "2. Concurrency Vulnerabilities and Privilege Escalation:\n"
+                "When state verification logic operates independently from state modification (such as checking "
+                "an account balance in one operational step and deducting funds much later), simultaneous concurrent "
+                "requests can execute the check phase before any balances are deducted. This timing subversion leads "
+                "to systemic errors like unauthorized double-spending, data corruption, or severe privilege escalation.\n\n"
+                "PREVENTION: Always enforce synchronization primitives like a lock or mutex around shared resources, "
+                "utilize atomic operations to combine check-and-use actions, and design critical sections to be as small as possible."
             ),
         )
         vuln_uaf = Vulnerability(
             name="Use After Free",
             ctfId=ctf_uaf.ctfId,
             description=(
-                "Use After Free is a memory safety bug where code continues to use a pointer "
-                "after the memory it references has been freed.\n\n"
-                "Example vulnerable C code:\n"
-                "  char *p = malloc(64);\n"
-                "  free(p);\n"
-                "  strcpy(p, \"hello\");\n\n"
-                "After free, p still points to the old address. If that block has been reused by "
-                "another allocation, writing through p can corrupt the new object and may allow "
-                "attacker-controlled data to influence execution.\n"
-                "A use-after-free bug can be exploited to execute arbitrary code when the freed "
-                "memory is recycled for attacker-controlled content.\n\n"
-                "Prevention: set pointers to NULL after free or choose "
-                "memory-safe languages."
+                "Use After Free is a critical memory safety bug that occurs when an application continues "
+                "to dereference or access a pointer after the memory block it references has been explicitly "
+                "deallocated. This leaves a dangling pointer pointing to an unpredictable area of the program heap.\n\n"
+                "1. Mechanics and Dangling Pointers:\n"
+                "In manual memory management systems, freeing a dynamic pointer releases the underlying block back to "
+                "the heap allocator but leaves the pointer variable's address value intact. A classic manifestation "
+                "of this error looks like this:\n\n"
+                "\tchar *p = malloc(64);\n"
+                "\tfree(p);\n"
+                "\tstrcpy(p, \"hello\");\n\n"
+                "Because p is not cleared immediately following the free operation, it remains a stale reference. "
+                "Any subsequent read or write operation through this stale reference directly triggers a use after free condition.\n\n"
+                "2. Heap Exploitation and Arbitrary Execution:\n"
+                "If the heap allocator reallocates that exact freed memory block to a different object or data "
+                "structure later in execution, the dangling pointer will now point directly inside the new object's data space. "
+                "An attacker can leverage this overlap to read sensitive leaked data or overwrite function pointers, "
+                "vtable references, or control structures.\n\n"
+                "PREVENTION: Always assign the safe value of NULL to a pointer immediately after freeing it to prevent accidental "
+                "stale dereferencing, or transition the application layer to modern memory-safe languages."
             ),
         )
         db.session.add_all([vuln_sqli, vuln_buff_over, vuln_int_over, vuln_race_cond, vuln_uaf])
@@ -218,7 +237,7 @@ def seed():
             # SQL Injection
             Question(vulnId=vuln_sqli.vulnId, questionNumber=1,
                      question="What two-character SQL sequence comments out the remainder of a query?",
-                     answer="--|'--"),
+                     answer="--"),
             Question(vulnId=vuln_sqli.vulnId, questionNumber=2,
                      question="Which SQL keyword merges the results of two SELECT statements, "
                               "often used in SQLi to extract data from other tables?",
@@ -248,15 +267,15 @@ def seed():
                      answer="TOCTOU"),
             Question(vulnId=vuln_race_cond.vulnId, questionNumber=2,
                      question="What concurrency primitive is often used to prevent race conditions by protecting a critical section?",
-                     answer="lock"),
+                     answer="lock|mutex|semaphore"),
 
             # Use After Free
             Question(vulnId=vuln_uaf.vulnId, questionNumber=1,
                      question="What type of memory error occurs when code dereferences a pointer after the memory has been freed?",
-                     answer="use after free"),
+                     answer="use after free|uaf"),
             Question(vulnId=vuln_uaf.vulnId, questionNumber=2,
                      question="After freeing memory, what safe value should you assign to the pointer?",
-                     answer="NULL"),
+                     answer="NULL|nullptr"),
         ]
         db.session.add_all(questions)
         db.session.flush()
@@ -311,13 +330,13 @@ def seed():
             Hint(questionId=q_race_cond[0], hintNumber=1,
                 hint="Name for the sequence of checking and then using a resource."),
             Hint(questionId=q_race_cond[0], hintNumber=2,
-                hint="It stands for time-of-check to time-of-use."),
+                hint="It stands for time-of-check time-of-use."),
 
             # Race Condition Q2
             Hint(questionId=q_race_cond[1], hintNumber=1,
                 hint="This primitive allows only one thread to enter a critical section at a time."),
             Hint(questionId=q_race_cond[1], hintNumber=2,
-                hint="It is often called a mutex or mutual exclusion object."),
+                hint="It is often called a mutual exclusion object."),
 
             # Use After Free Q1
             Hint(questionId=q_uaf[0], hintNumber=1,
