@@ -36,9 +36,10 @@ def seed():
         # ------------------------------------------------------------------
         ctf_sqli = CTF(
             description=(
-                "Use SQL injection to bypass the login form and authenticate as 'admin' without knowing the password.\n"
-                "The backend query is:\n"
-                "  SELECT * FROM users WHERE username='<input>' AND password='<input>'\n"
+                "You need to to login as 'admin' but you don't know the password.\n"
+                "Your friend, who worked on this system, told you that the system is vulnerable to SQL injection.\n"
+                "He doesnt quite remember the exact backend query, but its something like:\n"
+                "  SELECT ... FROM ... username='...' AND password='...' ...\n"
             ),
             path="/static/ctf/sqli_login.zip",
             flag="sqli_bypass_success",
@@ -63,10 +64,17 @@ def seed():
         )
         ctf_race_cond = CTF(
             description=(
-                "NOT IMPLEMENTED\n"
+                "You are on OSMA Hardware Store online portal.\n"
+                "You want to buy 2 Game Controllers (10 zl each) but your store credit is only 10 zl.\n"
+                "If you buy 2 controllers you get a free pair of headphones!\n"
+                "You know the checkout system works in three steps:\n"
+                "  1. Check if account balance >= item price\n"
+                "  2. Process your name into the customer database (this takes a while)\n"
+                "  3. Deduct the price from your balance\n"
+                "You have the portal open in two tabs.\n"
             ),
             path="/static/ctf/race_condition.zip",
-            flag="flag",
+            flag="my_free_headphones",
         )
         ctf_uaf = CTF(
             description=(
